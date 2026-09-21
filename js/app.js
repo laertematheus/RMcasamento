@@ -8,9 +8,8 @@ const VIDEO_ANO = '2022';
 // Apps Script do RSVP (lista de convidados) — já existente:
 const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxk-OrRRvee1H2rgXB0UVXrSll7yWK-Sd3H8xm49SwMOU8NQgYUHHkDjWPYjBn8fAwquw/exec';
 
-// Apps Script dos PRESENTES (planilha do formulário) — COLE A URL AQUI quando tiver:
-// enquanto ficar vazio (''), o site mostra uns presentes de exemplo.
-const PRODUTOS_URL = '';
+// Apps Script dos PRESENTES (planilha do formulário):
+const PRODUTOS_URL = 'https://script.google.com/macros/s/AKfycbw47uIHThSgKbcoOyXUYWXruGTIquVkDWgjWmw_0i160Mi-3SB-hxhs-KmKEizKUMk72Q/exec';
 
 /* ════════════════════════════════════════════════════════════
    PRESENTES DE EXEMPLO (aparecem só enquanto PRODUTOS_URL está vazio)
@@ -175,7 +174,7 @@ function renderProduct(id){
 function toggleLike(id, btn){
   const i = wishlist.indexOf(id);
   if (i>=0){ wishlist.splice(i,1); btn&&btn.classList.remove('liked'); }
-  else { wishlist.push(id); if(btn){ btn.classList.add('liked'); heartBurst(btn); } }
+  else { wishlist.push(id); if(btn){ btn.classList.add('liked'); } }
   save('mr_wishlist', wishlist);
   updateBadges();
   if ($('#drawer').classList.contains('open') && drawerMode==='wishlist') renderDrawer();
@@ -376,7 +375,7 @@ iv.addEventListener('timeupdate', ()=>{ if(iv.currentTime>iv.duration*0.6 && iv.
    COUNTDOWN
    ════════════════════════════════════════════════════════════ */
 function tick(){
-  const diff=new Date('2027-05-02T20:00:00-03:00')-new Date();
+  const diff=new Date('2026-11-14T13:00:00-03:00')-new Date();
   if(diff<=0) return;
   $('#days').textContent=String(Math.floor(diff/86400000)).padStart(3,'0');
   $('#hours').textContent=String(Math.floor((diff%86400000)/3600000)).padStart(2,'0');
@@ -384,6 +383,22 @@ function tick(){
   $('#seconds').textContent=String(Math.floor((diff%60000)/1000)).padStart(2,'0');
 }
 tick(); setInterval(tick,1000);
+
+/* ════════════════════════════════════════════════════════════
+   ADICIONAR À AGENDA (Google Agenda pré-preenchido + .ics com aviso 3h antes)
+   ════════════════════════════════════════════════════════════ */
+function addCalendar(){
+  // 1) baixa o convite .ics (leva o lembrete de 3h antes p/ qualquer agenda)
+  try{ const a=document.createElement('a'); a.href='evento.ics'; a.download='casamento-matheus-rafaella.ics'; document.body.appendChild(a); a.click(); a.remove(); }catch(e){}
+  // 2) abre o Google Agenda já preenchido
+  const g='https://calendar.google.com/calendar/render?action=TEMPLATE'
+    +'&text='+encodeURIComponent('Casamento Matheus e Rafa - Almoço 13h')
+    +'&dates=20261114T160000Z/20261114T190000Z'
+    +'&details='+encodeURIComponent('Casamento no civil de Matheus e Rafaella. Almoço às 13h. Te esperamos! 💕')
+    +'&location='+encodeURIComponent('Rua Frei Bartolomeu Pilar, 191 - São Roque, SP')
+    +'&ctz=America/Sao_Paulo';
+  window.open(g,'_blank','noopener');
+}
 
 /* ════════════════════════════════════════════════════════════
    INÍCIO

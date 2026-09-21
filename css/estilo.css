@@ -349,3 +349,83 @@ footer { padding: 44px 20px; text-align: center; background: var(--white); borde
   .modal { padding: 42px 24px; }
   .gift-grid { gap: 10px; }
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   REVISÃO 2 — fontes do convite, rosa só em traços/cabeçalho/rodapé,
+   linha do tempo (estilo Duolingo), agenda, símbolo do casal
+   ═══════════════════════════════════════════════════════════════ */
+:root{
+  --ink:#141414; --ink-soft:#4a4442; --ink-faint:#8f8a88;
+  --pink:#EF9CD0;          /* traços delicados */
+  --pink-strong:#e46fb1;   /* rosa forte para acentos (nunca em texto corrido) */
+  --pink-deep:#141414;     /* ERA rosa; agora PRETO -> tira rosa de textos e botões */
+  --font-script:'Pinyon Script', cursive;
+  --font-display:'Cormorant Garamond', serif;
+  --font-caps:'Cinzel', serif;
+  --font-body:'EB Garamond', serif;
+}
+body{ font-family:var(--font-body); font-weight:400; letter-spacing:.1px; }
+
+/* Fontes por função */
+.hero-names{ font-family:var(--font-script); font-weight:400; font-size:clamp(60px,14vw,140px); letter-spacing:0; line-height:.98; }
+.hero-names .amp{ font-family:var(--font-script); color:var(--pink-strong); font-size:.62em; margin:0 .06em; }
+.dance-title,.venue-title,.future-title,.gifts-title,.modal-title,.prod-name,.tl-title,.irma-yes,.drawer-title,.card-val,.venue-cap,.irma-quote,.rsvp-quote{ font-family:var(--font-display); }
+.eyebrow,.pre-label,.cd-lbl,.card-lbl,.prod-spec-lbl,.modal-eyebrow,.bag-tag,.rsvp-sub,.venue-sub,.dance-sub,.future-sub,.hero-date-dow,.footer-credit,.nav-link,.gift-store,.prod-store-chip,.tl-phase,.tl-here,.btn-mini,.irma-yes-tag,.scroll-cue span{ font-family:var(--font-caps); }
+
+/* Cabeçalho: monograma MR (imagem) + acento rosa forte */
+.nav{ border-bottom:1px solid var(--line); box-shadow:0 1px 0 rgba(228,111,177,.25); }
+.nav-mono img.mono-img{ height:26px; width:auto; display:block; }
+.nav-mono .mono-letters,.nav-mono .mono-dot{ display:none; }
+.nav-link::after{ background:var(--pink-strong); }
+.icon-badge{ background:var(--pink-strong); }
+
+/* Coração da lista de desejos: rosa forte + "pop" (sem fundo branco) */
+.gift-like.liked .houtline,.prod-like.liked .houtline{ fill:var(--pink-strong); stroke:var(--pink-strong); }
+.gift-like{ overflow:visible; }
+.gift-like.liked::after{ content:''; position:absolute; inset:-4px; border-radius:50%; border:2px solid var(--pink-strong); animation:ripple .55s ease-out; pointer-events:none; }
+@keyframes ripple{ from{transform:scale(.6);opacity:.7} to{transform:scale(1.5);opacity:0} }
+
+/* HERO: emblema do casal acima dos nomes */
+.hero-emblem{ width:clamp(190px,26vw,280px); margin:0 auto 6px; display:block; animation:fadeUp 1.4s ease forwards .3s; opacity:0; }
+.hero-sub-civil{ font-family:var(--font-caps); font-size:11px; letter-spacing:5px; text-transform:uppercase; color:var(--ink-soft); margin-top:10px; animation:fadeUp 1.2s ease forwards 1s; opacity:0; }
+
+/* ─────────── LINHA DO TEMPO (Duolingo) ─────────── */
+.tl-sec{ padding:90px 20px 100px; background:var(--paper); border-top:1px solid var(--line); text-align:center; }
+.tl-title{ font-style:italic; font-size:clamp(28px,5vw,50px); color:var(--ink); font-weight:300; margin-bottom:6px; }
+.tl-lead{ font-size:15px; color:var(--ink-soft); margin-bottom:54px; }
+.tl-path{ max-width:560px; margin:0 auto; position:relative; }
+.tl-node{ position:relative; display:flex; gap:22px; align-items:flex-start; text-align:left; padding-bottom:14px; }
+.tl-rail{ display:flex; flex-direction:column; align-items:center; flex-shrink:0; }
+.tl-dot{ width:64px; height:64px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:26px; position:relative; z-index:2; border:3px solid var(--ink); background:#fff; box-shadow:0 6px 0 rgba(20,20,20,.12); }
+.tl-node.active .tl-dot{ border-color:var(--pink-strong); box-shadow:0 6px 0 rgba(228,111,177,.35); }
+.tl-node.locked .tl-dot{ border-color:#cfc9cc; color:#b9b3b6; filter:grayscale(1); box-shadow:0 6px 0 rgba(20,20,20,.06); }
+.tl-avatar{ width:100%; height:100%; border-radius:50%; object-fit:cover; }
+.tl-connector{ width:4px; flex:1; min-height:70px; background:repeating-linear-gradient(to bottom, var(--pink) 0 8px, transparent 8px 16px); margin:4px 0; }
+.tl-node.locked .tl-connector{ background:repeating-linear-gradient(to bottom,#d8d2d5 0 8px,transparent 8px 16px); }
+.tl-here{ margin-top:8px; font-size:8px; letter-spacing:2px; text-transform:uppercase; color:var(--pink-strong); font-weight:700; text-align:center; }
+.tl-card{ flex:1; background:#fff; border:1px solid var(--line); border-radius:16px; padding:22px 24px; box-shadow:0 10px 30px rgba(20,20,20,.05); margin-bottom:26px; }
+.tl-node.locked .tl-card{ background:#faf8f9; opacity:.72; }
+.tl-phase{ font-size:9px; letter-spacing:3px; text-transform:uppercase; font-weight:700; color:var(--ink); }
+.tl-node.active .tl-phase{ color:var(--pink-strong); }
+.tl-card h3{ font-family:var(--font-display); font-weight:500; font-size:clamp(21px,3.4vw,27px); color:var(--ink); margin:6px 0 8px; }
+.tl-date{ font-size:14px; color:var(--ink); font-weight:600; }
+.tl-addr{ font-size:13px; color:var(--ink-soft); margin-top:3px; line-height:1.5; }
+.tl-actions{ display:flex; gap:10px; flex-wrap:wrap; margin-top:16px; }
+.btn-mini{ display:inline-flex; align-items:center; gap:7px; padding:10px 16px; border-radius:40px; font-size:9.5px; letter-spacing:2px; text-transform:uppercase; cursor:pointer; border:1px solid var(--ink); background:var(--ink); color:#fff; transition:all .25s; text-decoration:none; }
+.btn-mini.ghost{ background:transparent; color:var(--ink); }
+.btn-mini:hover{ background:var(--pink-strong); border-color:var(--pink-strong); color:#fff; }
+.btn-mini svg{ width:14px; height:14px; }
+.tl-soon{ display:inline-block; margin-top:12px; font-size:11px; letter-spacing:1px; color:var(--ink-faint); font-style:italic; }
+
+/* ─────────── RODAPÉ com símbolo do casal ─────────── */
+footer{ border-top:1px solid var(--line); box-shadow:0 -1px 0 rgba(228,111,177,.25); padding-top:40px; }
+.footer-emblem{ width:120px; margin:0 auto 14px; display:block; opacity:.9; }
+.footer-mono{ display:none; }
+.footer-names{ font-family:var(--font-script); font-size:34px; color:var(--ink); line-height:1; margin-bottom:8px; }
+.footer-date{ font-family:var(--font-caps); font-size:10px; letter-spacing:4px; text-transform:uppercase; color:var(--ink-soft); margin-bottom:14px; }
+
+@media (max-width:600px){
+  .tl-dot{ width:54px; height:54px; font-size:22px; }
+  .tl-card{ padding:18px; }
+  .tl-node{ gap:14px; }
+}

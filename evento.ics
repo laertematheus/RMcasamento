@@ -1,0 +1,20 @@
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//Matheus e Rafaella//Casamento Civil//PT-BR
+CALSCALE:GREGORIAN
+METHOD:PUBLISH
+BEGIN:VEVENT
+UID:civil-mr-20261114@matheus-rafaella
+DTSTAMP:20260921T000000Z
+DTSTART:20261114T160000Z
+DTEND:20261114T190000Z
+SUMMARY:Casamento Matheus e Rafa - Almoço 13h
+LOCATION:Rua Frei Bartolomeu Pilar, 191
+DESCRIPTION:Casamento no civil de Matheus e Rafaella. Almoço às 13h. Te esperamos!
+BEGIN:VALARM
+TRIGGER:-PT3H
+ACTION:DISPLAY
+DESCRIPTION:Casamento Matheus e Rafa - Almoço 13h (em 3 horas)
+END:VALARM
+END:VEVENT
+END:VCALENDAR
