@@ -32,14 +32,16 @@ let PRODUCTS   = [];                               // preenchido pelo servidor o
 let wishlist   = load('mr_wishlist', []);          // corações (por aparelho)
 let localReserved = load('mr_localReserved', {});  // reservas locais (modo exemplo)
 let pendingGift = null;                            // presente que foi p/ a loja aguardando confirmação
+let usingExamples = false;                          // true quando a planilha está vazia e mostramos os exemplos
 const guestToken = (function(){ let t=load('mr_guest',null); if(!t){ t='g'+Math.random().toString(36).slice(2,10); save('mr_guest',t); } return t; })();
 const SERVER_ON = !!PRODUTOS_URL;
+function localMode(){ return !SERVER_ON || usingExamples; }  // reservas ficam locais nesse modo
 
 const $ = s => document.querySelector(s);
 const productById = id => PRODUCTS.find(p => p.id === id);
 
 /* reservado? por quem? */
-function reservedBy(p){ return SERVER_ON ? (p.reservado || '') : (localReserved[p.id] || ''); }
+function reservedBy(p){ return localMode() ? (localReserved[p.id] || '') : (p.reservado || ''); }
 function isMine(p){ return reservedBy(p) === guestToken; }
 function isTaken(p){ const r = reservedBy(p); return r && r !== guestToken; }
 function myGift(){ return PRODUCTS.find(p => isMine(p)) || null; }
@@ -51,12 +53,13 @@ function money(v){ if(v==null) return ''; v=String(v).trim(); if(!v) return ''; 
    BUSCAR PRODUTOS
    ════════════════════════════════════════════════════════════ */
 async function loadProducts(){
-  if (!SERVER_ON){ PRODUCTS = PRODUTOS_EXEMPLO.map(p=>({...p})); return; }
+  if (!SERVER_ON){ PRODUCTS = PRODUTOS_EXEMPLO.map(p=>({...p})); usingExamples=true; return; }
   try {
     const res = await fetch(PRODUTOS_URL + '?t=' + Date.now());
     const data = await res.json();
     const lista = (Array.isArray(data)?data:(data.produtos||[]));
-    if (!lista.length){ PRODUCTS = PRODUTOS_EXEMPLO.map(p=>({...p})); return; } // planilha vazia -> mostra exemplos p/ testar
+    if (!lista.length){ PRODUCTS = PRODUTOS_EXEMPLO.map(p=>({...p})); usingExamples=true; return; } // planilha vazia -> mostra exemplos p/ testar
+    usingExamples=false;
     PRODUCTS = lista.map(p => ({
       id: String(p.id),
       nome: p.nome || p.titulo || 'Presente',
@@ -69,7 +72,7 @@ async function loadProducts(){
     }));
   } catch(e){
     console.warn('Falha ao buscar presentes, usando exemplos.', e);
-    PRODUCTS = PRODUTOS_EXEMPLO.map(p=>({...p}));
+    PRODUCTS = PRODUTOS_EXEMPLO.map(p=>({...p})); usingExamples=true;
   }
 }
 
@@ -239,7 +242,7 @@ async function cancelGift(id){
 }
 /* grava reserva no servidor (ou local, no modo exemplo) */
 async function reserveWrite(id, acao){
-  if (!SERVER_ON){
+  if (localMode()){
     if (acao==='reservar') localReserved[id]=guestToken; else delete localReserved[id];
     save('mr_localReserved', localReserved);
     return;
@@ -400,9 +403,7 @@ tick(); setInterval(tick,1000);
    ADICIONAR À AGENDA (Google Agenda pré-preenchido + .ics com aviso 3h antes)
    ════════════════════════════════════════════════════════════ */
 function addCalendar(){
-  // 1) baixa o convite .ics (leva o lembrete de 3h antes p/ qualquer agenda)
-  try{ const a=document.createElement('a'); a.href='evento.ics'; a.download='casamento-matheus-rafaella.ics'; document.body.appendChild(a); a.click(); a.remove(); }catch(e){}
-  // 2) abre o Google Agenda já preenchido
+  // abre o Google Agenda já preenchido (sem baixar arquivo)
   const g='https://calendar.google.com/calendar/render?action=TEMPLATE'
     +'&text='+encodeURIComponent('Casamento Matheus e Rafa - Almoço 13h')
     +'&dates=20261114T160000Z/20261114T190000Z'

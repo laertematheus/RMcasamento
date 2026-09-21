@@ -591,3 +591,9 @@ main{ padding-top:98px; }
 /* emblema do casal como marca-d'água de fundo centralizada (confiável) */
 .hero-emblem{ display:none !important; }
 .hero::after{ content:''; position:absolute; inset:0; background:url("../simbolo_casal.svg") center 44% / min(84%,480px) no-repeat; opacity:.05; z-index:0; pointer-events:none; }
+
+/* REVISÃO 4.1 — menos espaço em branco no hero */
+.hero{ min-height:52vh; padding:20px 20px 40px; }
+@media (max-width:640px){ .hero{ min-height:auto; padding:16px 18px 36px; } }
+.hero::after{ background-size:min(80%,430px); }
+.gift-ph span{ font-family:var(--font-body); font-style:normal; font-size:12px; }
