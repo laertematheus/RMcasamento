@@ -521,3 +521,73 @@ body{ font-size:17px; line-height:1.62; padding-bottom:66px; }  /* espaço p/ a 
   .irma-inner{ max-width:100%; }
   .cd-wrap{ gap:18px; }
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   REVISÃO 4 — Poppins (Rafa), cabeçalho estilo Mercado Pago,
+   emblema como marca-d'água, linha do tempo com selo em cima
+   ═══════════════════════════════════════════════════════════════ */
+:root{
+  --font-body:'Poppins', system-ui, sans-serif;
+  --font-display:'Poppins', system-ui, sans-serif;
+  --font-caps:'Poppins', system-ui, sans-serif;
+  /* --font-script (Pinyon) só para "Matheus & Rafaella" */
+}
+body{ font-family:var(--font-body); font-weight:400; padding-bottom:0; }
+
+/* Só os nomes usam a caligrafia */
+.hero-names,.footer-names{ font-family:var(--font-script) !important; }
+
+/* Títulos de seção: Poppins MAIÚSCULO (pedido da Rafa) */
+.gifts-title,.dance-title,.future-title,.tl-title{
+  font-family:var(--font-caps); font-style:normal; text-transform:uppercase;
+  font-weight:700; letter-spacing:.6px; font-size:clamp(22px,5.2vw,34px); line-height:1.16;
+}
+.gifts-sub{ font-family:var(--font-caps); font-weight:500; }
+.prod-name,.modal-title,.drawer-title{ font-family:var(--font-caps); font-weight:600; font-style:normal; }
+.irma-quote{ font-family:var(--font-caps); font-weight:500; font-style:normal; }
+.eyebrow,.tl-phase,.tl-badge,.tl-date,.tl-soon,.cd-lbl,.gift-store,.prod-store-chip,.btn-mini,.ntab,.tabbar-item{ font-family:var(--font-caps); }
+
+/* ═══════════ CABEÇALHO estilo Mercado Pago (rosa; aba ativa branca) ═══════════ */
+.nav{ background:var(--pink); border-bottom:none; box-shadow:none; padding:0; display:block; }
+.nav-top{ display:flex; align-items:center; justify-content:space-between; padding:11px clamp(16px,5vw,44px) 6px; }
+.nav-mono img.mono-img{ height:24px; }
+.icon-btn{ color:var(--ink); }
+.nav-tabs{ display:flex; gap:6px; padding:2px clamp(10px,4vw,28px) 0; }
+.ntab{ background:transparent; border:none; cursor:pointer; font-weight:600; font-size:13px; letter-spacing:.3px; color:var(--ink); padding:13px 30px; border-radius:16px 16px 0 0; transition:background .2s, color .2s; }
+.ntab:hover{ background:rgba(255,255,255,.4); }
+.ntab.active{ background:#fff; color:var(--ink); }
+main{ padding-top:98px; }
+/* fundo do hero branco para "casar" com a aba branca ativa */
+.hero::before{ opacity:.5; }
+
+/* ═══════════ HERO — emblema como marca-d'água de fundo ═══════════ */
+.hero-emblem{ position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); width:min(112vw,560px); max-width:none; opacity:.05; z-index:0; margin:0; pointer-events:none; }
+.hero-names,.hero-date,.pre-label{ position:relative; z-index:1; }
+.hero{ min-height:74vh; }
+
+/* ═══════════ LINHA DO TEMPO — selo em cima (some o rail lateral) ═══════════ */
+.tl-path{ max-width:520px; margin:0 auto; }
+.tl-node{ display:block; }
+.tl-node .tl-rail{ display:none; }              /* remove coluna lateral antiga */
+.tl-head{ display:flex; align-items:center; gap:14px; margin-bottom:14px; }
+.tl-avatar-wrap{ width:58px; height:58px; border-radius:50%; border:3px solid var(--ink); overflow:hidden; flex-shrink:0; box-shadow:0 4px 0 rgba(17,17,17,.12); }
+.tl-avatar{ width:100%; height:100%; object-fit:cover; display:block; }
+.tl-lock-wrap{ width:58px; height:58px; border-radius:50%; border:3px solid #dcd6d9; background:#faf8f9; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+.tl-lock-wrap .tl-lockimg{ width:26px; height:26px; }
+.tl-badge{ font-weight:700; font-size:11px; letter-spacing:1.2px; text-transform:uppercase; color:var(--ink); background:var(--pink); padding:7px 14px; border-radius:999px; }
+.tl-badge.locked{ background:var(--surface-2); color:var(--ink-3); }
+.tl-connect{ width:3px; height:36px; margin:2px auto; background:repeating-linear-gradient(to bottom,#c9c4c7 0 7px,transparent 7px 15px); }
+.tl-card{ margin-bottom:0; }
+.tl-phase{ display:inline-block; margin-top:2px; }
+.tl-node.locked .tl-card{ opacity:.78; }
+
+@media (max-width:640px){
+  main{ padding-top:96px; }
+  .ntab{ flex:1; padding:12px 10px; font-size:13px; }
+  .nav-tabs{ gap:5px; }
+  .hero{ min-height:70vh; }
+}
+
+/* emblema do casal como marca-d'água de fundo centralizada (confiável) */
+.hero-emblem{ display:none !important; }
+.hero::after{ content:''; position:absolute; inset:0; background:url("../simbolo_casal.svg") center 44% / min(84%,480px) no-repeat; opacity:.05; z-index:0; pointer-events:none; }

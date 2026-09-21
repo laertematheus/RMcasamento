@@ -6,26 +6,32 @@
 <title>Matheus & Rafaella · 02.05.2027</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23EF9CD0' d='M12 21s-8-5.3-8-11a4.5 4.5 0 0 1 8-2.9A4.5 4.5 0 0 1 20 10c0 5.7-8 11-8 11z'/%3E%3C/svg%3E">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400;1,500&family=Jost:wght@200;300;400;500;600&display=swap" rel="stylesheet">
-<link href="https://fonts.googleapis.com/css2?family=Pinyon+Script&family=Cinzel:wght@400;500;600&family=EB+Garamond:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/estilo.css?v=20260921c">
+<link href="https://fonts.googleapis.com/css2?family=Pinyon+Script&family=Poppins:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400;1,500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/estilo.css?v=20260921d">
 </head>
 <body>
 <canvas id="canvas"></canvas>
 
 <!-- ═══════════ NAV ═══════════ -->
 <nav class="nav" id="nav">
-  <div class="nav-mono" onclick="go('')">
-    <img class="mono-img" src="mr_mono.svg" alt="M & R">
+  <div class="nav-top">
+    <div class="nav-mono" onclick="go('')">
+      <img class="mono-img" src="mr_mono.svg" alt="M & R">
+    </div>
+    <div class="nav-icons">
+      <button class="icon-btn" onclick="openDrawer('wishlist')" title="Lista de desejos" aria-label="Lista de desejos">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M12 21s-8-5.3-8-11a4.5 4.5 0 0 1 8-2.9A4.5 4.5 0 0 1 20 10c0 5.7-8 11-8 11z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>
+        <span class="icon-badge" id="wlBadge">0</span>
+      </button>
+      <button class="icon-btn" onclick="openDrawer('bag')" title="Meu presente" aria-label="Meu presente">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M6 8h12l-1 12H7L6 8z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M9 8V6a3 3 0 0 1 6 0v2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+        <span class="icon-badge" id="bagBadge">1</span>
+      </button>
+    </div>
   </div>
-  <div class="nav-icons">
-    <button class="icon-btn" onclick="openDrawer('wishlist')" title="Lista de desejos" aria-label="Lista de desejos">
-      <svg viewBox="0 0 24 24" fill="none"><path d="M12 21s-8-5.3-8-11a4.5 4.5 0 0 1 8-2.9A4.5 4.5 0 0 1 20 10c0 5.7-8 11-8 11z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>
-      <span class="icon-badge" id="wlBadge">0</span>
-    </button>
-    <button class="icon-btn" onclick="openDrawer('bag')" title="Meu presente" aria-label="Meu presente">
-      <svg viewBox="0 0 24 24" fill="none"><path d="M6 8h12l-1 12H7L6 8z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M9 8V6a3 3 0 0 1 6 0v2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
-      <span class="icon-badge" id="bagBadge">1</span>
-    </button>
+  <div class="nav-tabs">
+    <button class="ntab active" data-route="" onclick="go('')">Início</button>
+    <button class="ntab" data-route="presentes" onclick="go('presentes')">Presentes</button>
   </div>
 </nav>
 
@@ -54,12 +60,11 @@
     <p class="tl-lead reveal d2">Estamos no comecinho dessa história — acompanhe cada fase.</p>
     <div class="tl-path">
       <div class="tl-node active reveal d1">
-        <div class="tl-rail">
-          <div class="tl-dot"><img class="tl-avatar" src="foto_casal.jpg" alt="Matheus e Rafaella"></div>
-          <span class="tl-here">nós estamos aqui</span>
-          <div class="tl-connector"></div>
-        </div>
         <div class="tl-card">
+          <div class="tl-head">
+            <div class="tl-avatar-wrap"><img class="tl-avatar" src="foto_casal.jpg" alt="Matheus e Rafaella"></div>
+            <span class="tl-badge">Estamos aqui</span>
+          </div>
           <span class="tl-phase"><span class="grife">Fase 1 · Desbloqueada</span></span>
           <h3>Casamento no Civil <span class="tl-emoji">💍</span></h3>
           <p class="tl-date">14 de novembro de 2026 · almoço às 13h</p>
@@ -71,16 +76,17 @@
           </div>
         </div>
       </div>
+      <div class="tl-connect"></div>
       <div class="tl-node locked reveal d2">
-        <div class="tl-rail">
-          <div class="tl-dot"><img class="tl-lockimg" src="lock.svg" alt="bloqueado"></div>
-        </div>
         <div class="tl-card">
-          <span class="tl-phase">Fase 2 · Em breve</span>
+          <div class="tl-head">
+            <div class="tl-lock-wrap"><img class="tl-lockimg" src="lock.svg" alt="bloqueado"></div>
+            <span class="tl-badge locked">Em breve</span>
+          </div>
+          <span class="tl-phase">Fase 2</span>
           <h3>Festa de Casamento</h3>
           <p class="tl-date">02 de maio de 2027 · São Roque — SP</p>
           <p class="tl-addr">A grande celebração — os detalhes vêm depois do civil.</p>
-          <span class="tl-soon"><img class="tl-lockmini" src="lock.svg" alt=""> desbloqueia em breve</span>
         </div>
       </div>
     </div>
@@ -256,22 +262,10 @@
   </div>
 </div>
 
-<!-- ═══════════ BARRA INFERIOR (troca de seção rápida) ═══════════ -->
-<nav class="tabbar">
-  <button class="tabbar-item active" data-route="" onclick="go('')">
-    <svg class="tb-ico" viewBox="0 0 24 24" fill="none"><path d="M4 11.5 12 4l8 7.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/><path d="M6 10.5V19h12v-8.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
-    <span>Início</span>
-  </button>
-  <button class="tabbar-item" data-route="presentes" onclick="go('presentes')">
-    <svg class="tb-ico" viewBox="0 0 24 24" fill="none"><rect x="4" y="8" width="16" height="3.5" rx="1" stroke="currentColor" stroke-width="1.6"/><path d="M5.5 11.5h13V19a1 1 0 0 1-1 1h-11a1 1 0 0 1-1-1z" stroke="currentColor" stroke-width="1.6"/><path d="M12 8v12" stroke="currentColor" stroke-width="1.6"/><path d="M12 8S10.5 4 8 4 5.5 6.2 6.5 7.2 12 8 12 8zM12 8s1.5-4 4-4 2.5 2.2 1.5 3.2S12 8 12 8z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>
-    <span>Presentes</span>
-  </button>
-</nav>
-
 <canvas id="confetti-canvas"></canvas>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/canvas-confetti/1.9.3/confetti.browser.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/bodymovin/5.12.2/lottie.min.js"></script>
-<script src="js/app.js?v=20260921c"></script>
+<script src="js/app.js?v=20260921d"></script>
 </body>
 </html>

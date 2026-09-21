@@ -91,7 +91,7 @@ function showView(name){
   document.querySelectorAll('.nav-link[data-route]').forEach(l=>{
     l.classList.toggle('active', l.dataset.route === rota);
   });
-  document.querySelectorAll('.tabbar-item[data-route]').forEach(l=>{
+  document.querySelectorAll('.ntab[data-route],.tabbar-item[data-route]').forEach(l=>{
     l.classList.toggle('active', l.dataset.route === rota);
   });
 }
@@ -179,13 +179,13 @@ function renderProduct(id){
 function toggleLike(id, btn){
   const i = wishlist.indexOf(id);
   if (i>=0){ wishlist.splice(i,1); btn&&btn.classList.remove('liked'); }
-  else { wishlist.push(id); if(btn){ btn.classList.add('liked'); } }
+  else { wishlist.push(id); if(btn){ btn.classList.add('liked'); heartBurst(btn); } }
   save('mr_wishlist', wishlist);
   updateBadges();
   if ($('#drawer').classList.contains('open') && drawerMode==='wishlist') renderDrawer();
 }
 let heartData=null;
-fetch('heart_anim.json').then(r=>r.json()).then(d=>heartData=d).catch(()=>{});
+fetch('heart_anim.json?v=20260921d').then(r=>r.json()).then(d=>heartData=d).catch(()=>{});
 function heartBurst(btn){
   if(!btn||!heartData||!window.lottie) return;
   const r=btn.getBoundingClientRect();
