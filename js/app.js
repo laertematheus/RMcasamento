@@ -45,6 +45,7 @@ function reservedBy(p){ return localMode() ? (localReserved[p.id] || '') : (p.re
 function isMine(p){ return reservedBy(p) === guestToken; }
 function isTaken(p){ const r = reservedBy(p); return r && r !== guestToken; }
 function myGift(){ return PRODUCTS.find(p => isMine(p)) || null; }
+function myGifts(){ return PRODUCTS.filter(p => isMine(p)); }
 
 /* preço bonitinho */
 function money(v){ if(v==null) return ''; v=String(v).trim(); if(!v) return ''; return v.startsWith('R$')?v:('R$ '+v); }
@@ -102,6 +103,7 @@ async function router(){
   const h = location.hash.replace(/^#\/?/, '');
   if (h.startsWith('produto/')) { showView('produto'); if(!PRODUCTS.length) await loadProducts(); renderProduct(h.split('/')[1]); }
   else if (h === 'presentes') { showView('presentes'); await ensureProductsAndRenderGrid(); }
+  else if (h === 'progresso') { showView('progresso'); if(!PRODUCTS.length) await loadProducts(); renderProgress(); }
   else { showView('home'); }
 }
 window.addEventListener('hashchange', router);
@@ -210,8 +212,12 @@ function startBuy(id){
   pendingGift=id;
   window.open(p.link,'_blank','noopener');
 }
-window.addEventListener('focus', ()=>{ if(pendingGift) setTimeout(askGiftConfirm,350); });
-document.addEventListener('visibilitychange', ()=>{ if(!document.hidden && pendingGift) setTimeout(askGiftConfirm,350); });
+function onReturnToSite(){
+  if(pendingGift) setTimeout(askGiftConfirm,350);
+  if(pendingCal){ pendingCal=false; setTimeout(()=>unlockLevel('ferro'),500); }
+}
+window.addEventListener('focus', onReturnToSite);
+document.addEventListener('visibilitychange', ()=>{ if(!document.hidden) onReturnToSite(); });
 
 function askGiftConfirm(){
   if(!pendingGift) return;
@@ -225,14 +231,13 @@ function closeGiftModal(){ $('#giftModalOverlay').classList.remove('open'); pend
 
 async function confirmGift(){
   const id=pendingGift; if(!id) return;
-  const prev = myGift(); // se já tinha outro, será devolvido
-  showGiftStep('gstep-done'); // feedback imediato
-  fireConfetti();
-  if (prev && prev.id!==id) await reserveWrite(prev.id, 'cancelar');
+  const primeiroPresente = !levels['bronze'];   // 1º presente desbloqueia o nível Bronze
   await reserveWrite(id, 'reservar');
   await loadProducts();
   pendingGift=null;
   updateBadges(); renderGrid();
+  if (primeiroPresente){ closeGiftModal(); unlockLevel('bronze'); }  // celebração de nível
+  else { showGiftStep('gstep-done'); fireConfetti(); }
 }
 async function cancelGift(id){
   await reserveWrite(id, 'cancelar');
@@ -269,6 +274,85 @@ function fireConfetti(){
 }
 
 /* ════════════════════════════════════════════════════════════
+   PROGRESSO — selos de cera (Ferro→Diamante)
+   ════════════════════════════════════════════════════════════ */
+const LEVELS = [
+  { key:'ferro',    nome:'Ferro',    c1:'#fbe4f2', c2:'#f0c2e0', desc:'Adicionou lembrete no calendário',      locked:false },
+  { key:'bronze',   nome:'Bronze',   c1:'#f6c9e3', c2:'#e79fce', desc:'Reservou um presente de cama e banho',  locked:false },
+  { key:'prata',    nome:'Prata',    c1:'#EF9CD0', c2:'#df79bb', desc:'Confirmou presença no casamento',       locked:true, soon:'em breve' },
+  { key:'ouro',     nome:'Ouro',     c1:'#e06fb4', c2:'#c94f9c', desc:'Adicionou o lembrete do casamento',     locked:true, soon:'em breve' },
+  { key:'diamante', nome:'Diamante', c1:'#cf4f97', c2:'#a83b7c', desc:'Reservou um presente de casamento',      locked:true, soon:'em breve' },
+];
+let levels = load('mr_levels', {});
+let pendingCal = false;
+function currentLevel(){ let last=null; for(const l of LEVELS){ if(levels[l.key]) last=l; } return last; }
+
+/* selo de cera desenhado na hora (SVG original) */
+function waxPath(cx,cy,R,bumps,amp){
+  const steps=bumps*2, pts=[];
+  for(let i=0;i<steps;i++){ const a=(i/steps)*Math.PI*2 - Math.PI/2; const r=R+(i%2?amp:-amp); pts.push([cx+Math.cos(a)*r, cy+Math.sin(a)*r]); }
+  let d=`M ${(pts[steps-1][0]+pts[0][0])/2} ${(pts[steps-1][1]+pts[0][1])/2} `;
+  for(let i=0;i<steps;i++){ const p=pts[i], n=pts[(i+1)%steps]; d+=`Q ${p[0]} ${p[1]} ${(p[0]+n[0])/2} ${(p[1]+n[1])/2} `; }
+  return d+'Z';
+}
+const ROSE='<g fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M50 40c7 0 11 6 8.5 12.5C56 59 47 60 43 55c-4-5-2-13 5-16 8-3 18 3 18 14 0 12-11 20-23 17"/><path d="M33 44c-6-8-2-19 9-21"/><path d="M67 44c6-8 2-19-9-21"/><path d="M36 61c-9-2-14-11-10-20"/><path d="M64 61c9-2 14-11 10-20"/><path d="M50 64v22"/><path d="M50 79c-8-3-14-9-14-9s9-2 15 4"/><path d="M50 74c8-3 14-9 14-9s-9-2-15 4"/></g>';
+function badgeSVG(l, size, unlocked){
+  const id='wax'+l.key+size;
+  const blob=waxPath(60,60,46,11,3.2), inner=waxPath(60,60,37,11,2.4);
+  const c1=unlocked?l.c1:'#eceaec', c2=unlocked?l.c2:'#d3ced1';
+  const roseC=unlocked?'rgba(110,15,72,.30)':'#b9b4b7', roseHi=unlocked?'rgba(255,255,255,.6)':'#fff';
+  return `<svg viewBox="0 0 120 120" width="${size}" height="${size}" class="badge-svg">
+    <defs><radialGradient id="${id}" cx="38%" cy="30%" r="80%"><stop offset="0%" stop-color="${c1}"/><stop offset="72%" stop-color="${c2}"/><stop offset="100%" stop-color="${c2}"/></radialGradient></defs>
+    <path d="${blob}" fill="url(#${id})" stroke="rgba(0,0,0,.05)"/>
+    <path d="${inner}" fill="none" stroke="rgba(0,0,0,.09)" stroke-width="1.3"/>
+    <g transform="translate(0,1.4)"><g stroke="${roseHi}" stroke-width="3">${ROSE}</g></g>
+    <g stroke="${roseC}" stroke-width="3">${ROSE}</g>
+  </svg>`;
+}
+
+function renderProgress(){
+  const cur=currentLevel();
+  $('#progTag').textContent = cur ? ('Nível atual · '+cur.nome) : 'Comece sua jornada';
+  const path=$('#progPath');
+  path.innerHTML = LEVELS.map((l,i)=>{
+    const on=!!levels[l.key];
+    const soon=l.locked;
+    let status = on ? '<span class="prog-status done">✓ desbloqueado</span>'
+                 : soon ? `<span class="prog-status soon"><img class="tl-lockmini" src="lock.svg" alt=""> ${l.soon||'em breve'}</span>`
+                        : '<span class="prog-status todo">a fazer agora</span>';
+    const node=`<div class="prog-node ${on?'on':(soon?'soon':'todo')}">
+        <div class="prog-badge">${badgeSVG(l,90,on)}</div>
+        <div class="prog-info">
+          <span class="prog-name">${l.nome}</span>
+          <span class="prog-desc">${l.desc}</span>
+          ${status}
+        </div>
+      </div>`;
+    return node + (i<LEVELS.length-1?`<div class="prog-connect ${on?'on':''}"></div>`:'');
+  }).join('');
+}
+
+function unlockLevel(key){
+  const l=LEVELS.find(x=>x.key===key);
+  if(!l || l.locked || levels[key]) return;
+  levels[key]=true; save('mr_levels', levels);
+  updateBadges();
+  if(location.hash.includes('progresso')) renderProgress();
+  celebrateLevel(l);
+}
+function celebrateLevel(l){
+  const o=$('#levelupOverlay'), c=$('#levelupCard');
+  c.innerHTML=`<div class="lu-badge">${badgeSVG(l,152,true)}</div>
+    <span class="lu-tag">Nível desbloqueado</span>
+    <h3 class="lu-name">Agora você é<br><b>Nível ${l.nome}</b></h3>
+    <p class="lu-desc">${l.desc}</p>`;
+  o.classList.add('open');
+  setTimeout(()=>{ if(window.fireConfetti) fireConfetti(); }, 260);
+  clearTimeout(o._t); o._t=setTimeout(()=>o.classList.remove('open'), 3000);
+  o.onclick=()=>{ clearTimeout(o._t); o.classList.remove('open'); };
+}
+
+/* ════════════════════════════════════════════════════════════
    DRAWER (lista de desejos / sacola)
    ════════════════════════════════════════════════════════════ */
 let drawerMode='wishlist';
@@ -287,16 +371,17 @@ function renderDrawer(){
         <button class="wl-remove" onclick="event.stopPropagation();toggleLike('${p.id}');renderDrawer();renderGrid();">✕</button>
       </div>`).join('');
   } else {
-    $('#drawerTitle').textContent='Meu presente';
-    const p = myGift();
-    if(!p){ body.innerHTML=`<div class="drawer-empty"><svg viewBox="0 0 24 24" fill="none"><path d="M6 8h12l-1 12H7L6 8z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M9 8V6a3 3 0 0 1 6 0v2" stroke="currentColor" stroke-width="1.4"/></svg><p>Você ainda não escolheu um presente.<br>Que tal dar uma olhadinha na lista? 🎁</p></div>`; return; }
+    $('#drawerTitle').textContent='Meus presentes';
+    const gifts = myGifts();
+    if(!gifts.length){ body.innerHTML=`<div class="drawer-empty"><svg viewBox="0 0 24 24" fill="none"><path d="M6 8h12l-1 12H7L6 8z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M9 8V6a3 3 0 0 1 6 0v2" stroke="currentColor" stroke-width="1.4"/></svg><p>Sua sacola está vazia.<br>Que tal escolher um presente? 🎁</p><button class="btn-mini solid" style="margin-top:22px;width:auto;" onclick="closeDrawer();go('presentes')">Ver presentes</button></div>`; return; }
     body.innerHTML=`<div class="bag-selected">
-      <div class="bag-card">
+      ${gifts.map(p=>`<div class="bag-card">
         <div class="wl-thumb">${mediaHTML(p)}</div>
-        <div class="wl-info"><span class="bag-tag">Seu presente selecionado</span><p class="wl-name" style="font-size:14px;">${p.nome}</p><p class="wl-price">${money(p.preco)} · ${p.loja}</p></div>
-      </div>
-      <button class="prod-cancel" style="margin-top:20px;" onclick="cancelGift('${p.id}');closeDrawer();">Cancelar presente</button>
-      <p class="modal-nota" style="text-align:center;">Se cancelar, o presente volta para a lista e você poderá escolher outro. 💕</p>
+        <div class="wl-info"><span class="bag-tag">Presente reservado</span><p class="wl-name">${p.nome}</p><p class="wl-price">${money(p.preco)} · ${p.loja}</p></div>
+        <button class="wl-remove" title="Cancelar presente" onclick="cancelGift('${p.id}')">✕</button>
+      </div>`).join('')}
+      <button class="btn-mini ghost" style="margin-top:16px;" onclick="closeDrawer();go('presentes')"><svg viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg> Adicionar mais presentes</button>
+      <p class="modal-nota" style="text-align:center;">Você pode reservar quantos quiser. Cancelar devolve o item à lista. 💕</p>
     </div>`;
   }
 }
@@ -307,7 +392,8 @@ function renderDrawer(){
 function updateBadges(){
   const wb=$('#wlBadge'), bb=$('#bagBadge');
   if(wishlist.length){ wb.textContent=wishlist.length; wb.classList.add('show'); } else wb.classList.remove('show');
-  if(myGift()) bb.classList.add('show'); else bb.classList.remove('show');
+  const n=myGifts().length;
+  if(n){ bb.textContent=n; bb.classList.add('show'); } else bb.classList.remove('show');
 }
 
 /* ════════════════════════════════════════════════════════════
@@ -411,6 +497,7 @@ function addCalendar(){
     +'&location='+encodeURIComponent('Rua Frei Bartolomeu Pilar, 191 - Vila Constança, São Paulo - SP')
     +'&ctz=America/Sao_Paulo';
   window.open(g,'_blank','noopener');
+  pendingCal = true;   // ao voltar da agenda, desbloqueia o nível Ferro
 }
 
 /* ════════════════════════════════════════════════════════════
