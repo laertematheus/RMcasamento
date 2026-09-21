@@ -169,10 +169,11 @@ function renderProduct(id){
              <button class="prod-cancel" onclick="cancelGift('${p.id}')">Cancelar presente</button>`
           : taken
           ? `<div class="prod-tip"><b>Presente já reservado</b> por outro convidado.<br>Que tal escolher outro? 💕</div>`
-          : `<button class="prod-buy" onclick="startBuy('${p.id}')">
+          : `<a class="prod-buy" href="${p.link}" target="_blank" rel="noopener" onclick="markPending('${p.id}')">
                <svg viewBox="0 0 24 24" fill="none"><path d="M6 8h12l-1 12H7L6 8z" stroke="#fff" stroke-width="1.6" stroke-linejoin="round"/><path d="M9 8V6a3 3 0 0 1 6 0v2" stroke="#fff" stroke-width="1.6" stroke-linecap="round"/></svg>
                Comprar na loja
-             </button>
+             </a>
+             <button class="prod-bought" onclick="manualBuy('${p.id}')">Já comprei este item ✓</button>
              <div class="prod-tip">Você pode comprar este item <b>na loja que preferir</b>. Vale buscar cupons e promoções — e usar o <b>Méliuz</b> para ganhar cashback. 💰</div>` }
       </div>
     </div>`;
@@ -212,6 +213,10 @@ function startBuy(id){
   pendingGift=id;
   window.open(p.link,'_blank','noopener');
 }
+// o botão "Comprar" agora é um link real (abre em nova aba no celular); só marcamos o pendente
+function markPending(id){ pendingGift=id; }
+// contingência manual: "Já comprei este item" -> abre o modal de confirmação na hora
+function manualBuy(id){ pendingGift=id; askGiftConfirm(); }
 function onReturnToSite(){
   if(pendingGift) setTimeout(askGiftConfirm,350);
   if(pendingCal){ pendingCal=false; setTimeout(()=>unlockLevel('ferro'),500); }
@@ -319,7 +324,7 @@ function renderProgress(){
     const soon=l.locked;
     let status = on ? '<span class="prog-status done">✓ desbloqueado</span>'
                  : soon ? `<span class="prog-status soon"><img class="tl-lockmini" src="lock.svg" alt=""> ${l.soon||'em breve'}</span>`
-                        : '<span class="prog-status todo">a fazer agora</span>';
+                        : `<button class="prog-status todo" onclick="progAction('${l.key}')">Fazer agora →</button>`;
     const node=`<div class="prog-node ${on?'on':(soon?'soon':'todo')}">
         <div class="prog-badge">${badgeSVG(l,90,on)}</div>
         <div class="prog-info">
@@ -341,15 +346,23 @@ function unlockLevel(key){
   celebrateLevel(l);
 }
 function celebrateLevel(l){
-  const o=$('#levelupOverlay'), c=$('#levelupCard');
-  c.innerHTML=`<div class="lu-badge">${badgeSVG(l,152,true)}</div>
-    <span class="lu-tag">Nível desbloqueado</span>
-    <h3 class="lu-name">Agora você é<br><b>Nível ${l.nome}</b></h3>
-    <p class="lu-desc">${l.desc}</p>`;
-  o.classList.add('open');
-  setTimeout(()=>{ if(window.fireConfetti) fireConfetti(); }, 260);
-  clearTimeout(o._t); o._t=setTimeout(()=>o.classList.remove('open'), 3000);
-  o.onclick=()=>{ clearTimeout(o._t); o.classList.remove('open'); };
+  fireConfetti();                       // 1) confete primeiro
+  setTimeout(()=>{                       // 2) depois entra o selo evoluindo
+    const o=$('#levelupOverlay'), c=$('#levelupCard');
+    c.innerHTML=`<div class="lu-badge">${badgeSVG(l,152,true)}</div>
+      <span class="lu-tag">Nível desbloqueado</span>
+      <h3 class="lu-name">Agora você é<br><b>Nível ${l.nome}</b></h3>
+      <p class="lu-desc">${l.desc}</p>`;
+    o.classList.add('open');
+    setTimeout(fireConfetti, 350);        // mais confete junto do selo
+    clearTimeout(o._t); o._t=setTimeout(()=>o.classList.remove('open'), 3200);
+    o.onclick=()=>{ clearTimeout(o._t); o.classList.remove('open'); };
+  }, 550);
+}
+/* botão "Fazer agora" da barra de progresso -> leva para onde a ação acontece */
+function progAction(key){
+  if(key==='bronze') go('presentes');
+  else if(key==='ferro'){ go(''); setTimeout(()=>document.querySelector('.tl-sec')?.scrollIntoView({behavior:'smooth'}),150); }
 }
 
 /* ════════════════════════════════════════════════════════════
