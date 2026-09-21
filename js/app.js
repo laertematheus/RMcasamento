@@ -14,13 +14,12 @@ const PRODUTOS_URL = 'https://script.google.com/macros/s/AKfycbw47uIHThSgKbcoOyX
 /* ════════════════════════════════════════════════════════════
    PRESENTES DE EXEMPLO (aparecem só enquanto PRODUTOS_URL está vazio)
    ════════════════════════════════════════════════════════════ */
+// Exemplos de Cama & Banho (aparecem enquanto a planilha estiver vazia — servem para testar o fluxo)
 const PRODUTOS_EXEMPLO = [
-  { id:'e1', nome:'Kit colcha casal Queen 3 peças', preco:'279,99', img:'', loja:'Casa Riachuelo', link:'https://www.riachuelo.com.br', spec:'Exemplo — os presentes de verdade virão da planilha do formulário.' },
-  { id:'e2', nome:'Jogo de toalhas de banho', preco:'149,90', img:'', loja:'Buddemeyer', link:'https://www.buddemeyer.com.br', spec:'Exemplo — os presentes de verdade virão da planilha do formulário.' },
-  { id:'e3', nome:'Conjunto suporte para frios em mármore', preco:'139,99', img:'', loja:'Casa Riachuelo', link:'https://www.riachuelo.com.br', spec:'Exemplo — os presentes de verdade virão da planilha do formulário.' },
-  { id:'e4', nome:'Air Fryer Digital 5L', preco:'399,00', img:'', loja:'Magalu', link:'https://www.magazineluiza.com.br', spec:'Exemplo — os presentes de verdade virão da planilha do formulário.' },
-  { id:'e5', nome:'Jogo de panelas antiaderente', preco:'329,90', img:'', loja:'Magalu', link:'https://www.magazineluiza.com.br', spec:'Exemplo — os presentes de verdade virão da planilha do formulário.' },
-  { id:'e6', nome:'Aparelho de jantar 20 peças', preco:'259,90', img:'', loja:'Oxford', link:'https://www.oxford.com.br', spec:'Exemplo — os presentes de verdade virão da planilha do formulário.' },
+  { id:'e1', nome:'Jogo de toalhas de banho e rosto', preco:'149,90', img:'', loja:'Buddemeyer', link:'https://www.buddemeyer.com.br', spec:'Jogo de toalhas 100% algodão, macias e de alta absorção. (Exemplo para testar — os presentes de verdade virão da planilha.)' },
+  { id:'e2', nome:'Edredom casal dupla face', preco:'189,99', img:'', loja:'Casa Riachuelo', link:'https://www.riachuelo.com.br', spec:'Edredom casal reversível, quentinho e leve. (Exemplo para testar — os presentes de verdade virão da planilha.)' },
+  { id:'e3', nome:'Jogo de lençóis 4 peças 200 fios', preco:'159,90', img:'', loja:'MMartan', link:'https://www.mmartan.com.br', spec:'Jogo de lençóis em algodão 200 fios, toque macio. (Exemplo para testar.)' },
+  { id:'e4', nome:'Kit 2 travesseiros de conforto', preco:'99,90', img:'', loja:'Magalu', link:'https://www.magazineluiza.com.br', spec:'Par de travesseiros com suporte ideal para noites tranquilas. (Exemplo para testar.)' },
 ];
 
 /* ════════════════════════════════════════════════════════════
@@ -56,7 +55,9 @@ async function loadProducts(){
   try {
     const res = await fetch(PRODUTOS_URL + '?t=' + Date.now());
     const data = await res.json();
-    PRODUCTS = (Array.isArray(data)?data:(data.produtos||[])).map(p => ({
+    const lista = (Array.isArray(data)?data:(data.produtos||[]));
+    if (!lista.length){ PRODUCTS = PRODUTOS_EXEMPLO.map(p=>({...p})); return; } // planilha vazia -> mostra exemplos p/ testar
+    PRODUCTS = lista.map(p => ({
       id: String(p.id),
       nome: p.nome || p.titulo || 'Presente',
       loja: p.loja || '',
@@ -86,8 +87,12 @@ function go(route){ location.hash = route ? '#/'+route : '#/'; if(window.innerWi
 function showView(name){
   document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
   $('#view-'+name).classList.add('active');
+  const rota = (name==='home'?'':(name==='produto'?'presentes':name));
   document.querySelectorAll('.nav-link[data-route]').forEach(l=>{
-    l.classList.toggle('active', l.dataset.route === (name==='home'?'':name));
+    l.classList.toggle('active', l.dataset.route === rota);
+  });
+  document.querySelectorAll('.tabbar-item[data-route]').forEach(l=>{
+    l.classList.toggle('active', l.dataset.route === rota);
   });
 }
 async function router(){
@@ -305,8 +310,8 @@ function updateBadges(){
 /* ════════════════════════════════════════════════════════════
    MENU MOBILE
    ════════════════════════════════════════════════════════════ */
-$('#hamb').addEventListener('click', ()=>$('#navLinks').classList.toggle('open'));
-function closeMenu(){ $('#navLinks').classList.remove('open'); }
+const hb=$('#hamb'); if(hb) hb.addEventListener('click', ()=>{ const nl=$('#navLinks'); if(nl) nl.classList.toggle('open'); });
+function closeMenu(){ const nl=$('#navLinks'); if(nl) nl.classList.remove('open'); }
 
 /* ════════════════════════════════════════════════════════════
    RSVP MODAL
@@ -371,13 +376,20 @@ iv.addEventListener('play', ()=>ido.classList.add('hidden'));
 iv.addEventListener('ended', ()=>setTimeout(()=>ir.classList.add('show'),400));
 iv.addEventListener('timeupdate', ()=>{ if(iv.currentTime>iv.duration*0.6 && iv.duration>0) ir.classList.add('show'); });
 
+/* Vídeo da dança: toca sozinho quando aparece na tela (mudo, por política do navegador) */
+const dv=document.querySelector('.video-land');
+if(dv){
+  dv.muted=true; dv.setAttribute('playsinline','');
+  new IntersectionObserver(es=>es.forEach(e=>{ if(e.isIntersecting){ dv.play().catch(()=>{}); } else { dv.pause(); } }), {threshold:0.4}).observe(dv);
+}
+
 /* ════════════════════════════════════════════════════════════
    COUNTDOWN
    ════════════════════════════════════════════════════════════ */
 function tick(){
   const diff=new Date('2026-11-14T13:00:00-03:00')-new Date();
   if(diff<=0) return;
-  $('#days').textContent=String(Math.floor(diff/86400000)).padStart(3,'0');
+  $('#days').textContent=String(Math.floor(diff/86400000));
   $('#hours').textContent=String(Math.floor((diff%86400000)/3600000)).padStart(2,'0');
   $('#minutes').textContent=String(Math.floor((diff%3600000)/60000)).padStart(2,'0');
   $('#seconds').textContent=String(Math.floor((diff%60000)/1000)).padStart(2,'0');
@@ -394,8 +406,8 @@ function addCalendar(){
   const g='https://calendar.google.com/calendar/render?action=TEMPLATE'
     +'&text='+encodeURIComponent('Casamento Matheus e Rafa - Almoço 13h')
     +'&dates=20261114T160000Z/20261114T190000Z'
-    +'&details='+encodeURIComponent('Casamento no civil de Matheus e Rafaella. Almoço às 13h. Te esperamos! 💕')
-    +'&location='+encodeURIComponent('Rua Frei Bartolomeu Pilar, 191 - São Roque, SP')
+    +'&details='+encodeURIComponent('Casamento no civil e Chá de Cama e Banho de Matheus e Rafaella. Almoço às 13h. Te esperamos! 💕')
+    +'&location='+encodeURIComponent('Rua Frei Bartolomeu Pilar, 191 - Vila Constança, São Paulo - SP')
     +'&ctz=America/Sao_Paulo';
   window.open(g,'_blank','noopener');
 }

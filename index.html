@@ -7,7 +7,7 @@
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23EF9CD0' d='M12 21s-8-5.3-8-11a4.5 4.5 0 0 1 8-2.9A4.5 4.5 0 0 1 20 10c0 5.7-8 11-8 11z'/%3E%3C/svg%3E">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400;1,500&family=Jost:wght@200;300;400;500;600&display=swap" rel="stylesheet">
 <link href="https://fonts.googleapis.com/css2?family=Pinyon+Script&family=Cinzel:wght@400;500;600&family=EB+Garamond:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/estilo.css?v=20260921b">
+<link rel="stylesheet" href="css/estilo.css?v=20260921c">
 </head>
 <body>
 <canvas id="canvas"></canvas>
@@ -16,10 +16,6 @@
 <nav class="nav" id="nav">
   <div class="nav-mono" onclick="go('')">
     <img class="mono-img" src="mr_mono.svg" alt="M & R">
-  </div>
-  <div class="nav-links" id="navLinks">
-    <button class="nav-link" data-route="" onclick="go('')">Início</button>
-    <button class="nav-link" data-route="presentes" onclick="go('presentes')">Presentes</button>
   </div>
   <div class="nav-icons">
     <button class="icon-btn" onclick="openDrawer('wishlist')" title="Lista de desejos" aria-label="Lista de desejos">
@@ -30,7 +26,6 @@
       <svg viewBox="0 0 24 24" fill="none"><path d="M6 8h12l-1 12H7L6 8z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M9 8V6a3 3 0 0 1 6 0v2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
       <span class="icon-badge" id="bagBadge">1</span>
     </button>
-    <button class="hamb" id="hamb" aria-label="Menu"><span></span><span></span><span></span></button>
   </div>
 </nav>
 
@@ -45,15 +40,11 @@
     <svg class="hero-corner br" viewBox="0 0 160 180" fill="none"><path d="M8 172 C8 100 80 80 80 8" stroke="#EF9CD0" stroke-width="0.7"/><ellipse cx="44" cy="130" rx="18" ry="8" stroke="#EF9CD0" stroke-width="0.7" fill="rgba(239,156,208,0.08)" transform="rotate(25 44 130)"/><circle cx="38" cy="148" r="4" stroke="#EF9CD0" stroke-width="0.5" fill="rgba(255,255,255,0.5)"/></svg>
 
     <img class="hero-emblem" src="simbolo_casal.svg" alt="Matheus e Rafaella">
-    <p class="pre-label">Casamento no Civil</p>
-    <div class="hero-rule"></div>
     <h1 class="hero-names">Matheus<span class="amp">&</span>Rafaella</h1>
     <div class="hero-date">
       <span class="hero-date-dow">sábado</span>
       <span class="hero-date-num">14 · 11 · 2026</span>
     </div>
-    <p class="hero-sub-civil">Almoço às 13h · São Roque · SP</p>
-    <div class="scroll-cue"><span>scroll</span><div class="scroll-bar"></div></div>
   </section>
 
   <!-- ════ LINHA DO TEMPO (Duolingo) ════ -->
@@ -65,30 +56,31 @@
       <div class="tl-node active reveal d1">
         <div class="tl-rail">
           <div class="tl-dot"><img class="tl-avatar" src="foto_casal.jpg" alt="Matheus e Rafaella"></div>
-          <span class="tl-here">vocês estão aqui</span>
+          <span class="tl-here">nós estamos aqui</span>
           <div class="tl-connector"></div>
         </div>
         <div class="tl-card">
-          <span class="tl-phase">Fase 1 · Desbloqueada</span>
-          <h3>Casamento no Civil</h3>
+          <span class="tl-phase"><span class="grife">Fase 1 · Desbloqueada</span></span>
+          <h3>Casamento no Civil <span class="tl-emoji">💍</span></h3>
           <p class="tl-date">14 de novembro de 2026 · almoço às 13h</p>
-          <p class="tl-addr">Rua Frei Bartolomeu Pilar, 191 — São Roque, SP</p>
+          <p class="tl-addr">Rua Frei Bartolomeu Pilar, 191<br>Vila Constança · São Paulo — SP</p>
           <div class="tl-actions">
-            <a class="btn-mini" href="https://maps.app.goo.gl/2Ctmws1JazXA1Wnw9" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none"><path d="M12 21s-7-6-7-11a7 7 0 0 1 14 0c0 5-7 11-7 11z" stroke="#fff" stroke-width="1.6" stroke-linejoin="round"/><circle cx="12" cy="10" r="2.3" stroke="#fff" stroke-width="1.6"/></svg> Ver rota</a>
-            <button class="btn-mini ghost" onclick="addCalendar()"><svg viewBox="0 0 24 24" fill="none"><rect x="3" y="5" width="18" height="16" rx="2" stroke="currentColor" stroke-width="1.6"/><path d="M3 9h18M8 3v4M16 3v4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg> Adicionar à agenda</button>
+            <button class="btn-mini solid" onclick="go('presentes')"><svg viewBox="0 0 24 24" fill="none"><path d="M6 8h12l-1 12H7L6 8z" stroke="#fff" stroke-width="1.7" stroke-linejoin="round"/><path d="M9 8V6a3 3 0 0 1 6 0v2" stroke="#fff" stroke-width="1.7"/></svg> Ver lista de presentes</button>
+            <a class="btn-mini ghost" href="https://maps.app.goo.gl/2Ctmws1JazXA1Wnw9" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none"><path d="M12 21s-7-6-7-11a7 7 0 0 1 14 0c0 5-7 11-7 11z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><circle cx="12" cy="10" r="2.3" stroke="currentColor" stroke-width="1.7"/></svg> Ver rota</a>
+            <button class="btn-mini ghost" onclick="addCalendar()"><svg viewBox="0 0 24 24" fill="none"><rect x="3" y="5" width="18" height="16" rx="2" stroke="currentColor" stroke-width="1.7"/><path d="M3 9h18M8 3v4M16 3v4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg> Adicionar à agenda</button>
           </div>
         </div>
       </div>
       <div class="tl-node locked reveal d2">
         <div class="tl-rail">
-          <div class="tl-dot">🔒</div>
+          <div class="tl-dot"><img class="tl-lockimg" src="lock.svg" alt="bloqueado"></div>
         </div>
         <div class="tl-card">
           <span class="tl-phase">Fase 2 · Em breve</span>
           <h3>Festa de Casamento</h3>
-          <p class="tl-date">02 de maio de 2027</p>
+          <p class="tl-date">02 de maio de 2027 · São Roque — SP</p>
           <p class="tl-addr">A grande celebração — os detalhes vêm depois do civil.</p>
-          <span class="tl-soon">🔒 desbloqueia em breve</span>
+          <span class="tl-soon"><img class="tl-lockmini" src="lock.svg" alt=""> desbloqueia em breve</span>
         </div>
       </div>
     </div>
@@ -127,42 +119,6 @@
       <div class="cd-item reveal d3"><span class="cd-num" id="minutes">--</span><span class="cd-lbl">minutos</span></div>
       <span class="cd-dot reveal d3">·</span>
       <div class="cd-item reveal d4"><span class="cd-num" id="seconds">--</span><span class="cd-lbl">segundos</span></div>
-    </div>
-  </section>
-
-  <section class="venue-sec">
-    <span class="eyebrow reveal">O cenário</span>
-    <h2 class="venue-title reveal d1">Um lugar de sonho</h2>
-    <p class="venue-sub reveal d2">São Paulo · detalhes para convidados confirmados</p>
-    <div class="venue-wrap reveal-scale d2">
-      <img class="venue-img" src="local_aquarela.png" alt="Local do casamento">
-      <div class="venue-frame"></div>
-    </div>
-    <p class="venue-cap reveal d3">Entre flores brancas e luz de festa</p>
-  </section>
-
-  <section class="info-sec">
-    <span class="eyebrow reveal">Anote na agenda</span>
-    <div class="thin-line reveal d1"></div>
-    <div class="info-grid">
-      <div class="info-card reveal d1">
-        <svg class="card-ico" viewBox="0 0 28 28" fill="none"><path d="M14 2C14 2 4 8 4 16a10 10 0 0020 0C24 8 14 2 14 2z" stroke="#d9569f" stroke-width="0.9"/><circle cx="14" cy="16" r="3" stroke="#EF9CD0" stroke-width="0.8"/></svg>
-        <p class="card-lbl">Local</p>
-        <p class="card-val">Um espaço encantado</p>
-        <p class="card-note">São Paulo · SP<br>Detalhes para confirmados</p>
-      </div>
-      <div class="info-card reveal d2">
-        <svg class="card-ico" viewBox="0 0 28 28" fill="none"><rect x="2" y="5" width="24" height="20" rx="2" stroke="#d9569f" stroke-width="0.9"/><path d="M2 11h24" stroke="#EF9CD0" stroke-width="0.6"/><path d="M9 2v6M19 2v6" stroke="#d9569f" stroke-width="0.9"/><circle cx="14" cy="19" r="2" fill="#EF9CD0" opacity="0.6"/></svg>
-        <p class="card-lbl">Data</p>
-        <p class="card-val">02 de maio<br>de 2027</p>
-        <p class="card-note">Domingo à noite</p>
-      </div>
-      <div class="info-card reveal d3">
-        <svg class="card-ico" viewBox="0 0 28 28" fill="none"><path d="M8 6h12l2 4H6l2-4z" stroke="#d9569f" stroke-width="0.8"/><rect x="7" y="10" width="14" height="11" rx="1" stroke="#d9569f" stroke-width="0.8"/><path d="M11 10v11M14 10v11M17 10v11" stroke="#EF9CD0" stroke-width="0.4" opacity="0.6"/><circle cx="14" cy="5" r="2" stroke="#EF9CD0" stroke-width="0.7"/></svg>
-        <p class="card-lbl">Traje</p>
-        <p class="card-val">Black-Tie</p>
-        <p class="card-note">Homens: traje a rigor</p>
-      </div>
     </div>
   </section>
 
@@ -214,16 +170,16 @@
 <!-- ═══════════ PRESENTES VIEW ═══════════ -->
 <div class="view" id="view-presentes">
   <div class="gifts-head">
-    <span class="eyebrow">Cama & Banho</span>
+    <span class="eyebrow"><span class="grife">Chá de Cama &amp; Banho</span></span>
     <h2 class="gifts-title">Lista de Presentes</h2>
-    <p class="gifts-intro">Para o nosso casamento no civil, montamos uma lista de <b>Cama e Banho</b> para deixar a nossa casa ainda mais aconchegante. Sua presença já é o nosso maior presente. 💕</p>
+    <p class="gifts-sub">14 · 11 · 2026</p>
+  </div>
+  <div class="grid-wrap">
+    <div class="gift-grid" id="giftGrid"></div>
     <div class="gifts-note">
       Você pode comprar cada item <b>na loja que preferir</b> — vale procurar o melhor preço, cupons e promoções.
       Para <b>cashback</b>, recomendamos o <b>Méliuz</b>. Ao escolher um presente, ele sai da lista para que ninguém repita. 🎁
     </div>
-  </div>
-  <div class="grid-wrap">
-    <div class="gift-grid" id="giftGrid"></div>
   </div>
 </div>
 
@@ -300,10 +256,22 @@
   </div>
 </div>
 
+<!-- ═══════════ BARRA INFERIOR (troca de seção rápida) ═══════════ -->
+<nav class="tabbar">
+  <button class="tabbar-item active" data-route="" onclick="go('')">
+    <svg class="tb-ico" viewBox="0 0 24 24" fill="none"><path d="M4 11.5 12 4l8 7.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/><path d="M6 10.5V19h12v-8.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <span>Início</span>
+  </button>
+  <button class="tabbar-item" data-route="presentes" onclick="go('presentes')">
+    <svg class="tb-ico" viewBox="0 0 24 24" fill="none"><rect x="4" y="8" width="16" height="3.5" rx="1" stroke="currentColor" stroke-width="1.6"/><path d="M5.5 11.5h13V19a1 1 0 0 1-1 1h-11a1 1 0 0 1-1-1z" stroke="currentColor" stroke-width="1.6"/><path d="M12 8v12" stroke="currentColor" stroke-width="1.6"/><path d="M12 8S10.5 4 8 4 5.5 6.2 6.5 7.2 12 8 12 8zM12 8s1.5-4 4-4 2.5 2.2 1.5 3.2S12 8 12 8z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>
+    <span>Presentes</span>
+  </button>
+</nav>
+
 <canvas id="confetti-canvas"></canvas>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/canvas-confetti/1.9.3/confetti.browser.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/bodymovin/5.12.2/lottie.min.js"></script>
-<script src="js/app.js?v=20260921b"></script>
+<script src="js/app.js?v=20260921c"></script>
 </body>
 </html>

@@ -429,3 +429,95 @@ footer{ border-top:1px solid var(--line); box-shadow:0 -1px 0 rgba(228,111,177,.
   .tl-card{ padding:18px; }
   .tl-node{ gap:14px; }
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   REVISÃO 3 — DESIGN SYSTEM (Notion clean + rosa Méliuz só em grifos)
+   Fontes maiores/legíveis no celular, menos vazio, barra inferior,
+   linha do tempo repaginada. Rosa NUNCA em letra — só grifo/detalhe.
+   ═══════════════════════════════════════════════════════════════ */
+:root{
+  --ink:#171717; --ink-2:#4a4a4a; --ink-3:#8a8a8a;
+  --line:#ececec; --surface-2:#f7f7f8;
+  --pink:#EF9CD0; --pink-2:#fbe4f2; --pink-strong:#e572b4;
+  --r-sm:12px; --r-md:18px; --r-lg:24px; --r-pill:999px;
+  --sh-1:0 1px 2px rgba(17,17,17,.05);
+  --sh-2:0 8px 28px rgba(17,17,17,.07);
+  --sh-3:0 16px 44px rgba(17,17,17,.10);
+}
+body{ font-size:17px; line-height:1.62; padding-bottom:66px; }  /* espaço p/ a barra inferior */
+
+/* GRIFO rosa (destaque sem letra rosa) */
+.grife{ background:linear-gradient(transparent 72%, var(--pink) 72%, var(--pink) 92%, transparent 92%); padding:0 .12em; border-radius:2px; }
+
+/* ---- tipografia maior / acessível ---- */
+.eyebrow{ font-size:12.5px; letter-spacing:4px; color:var(--ink); }
+.dance-sub,.future-sub,.venue-sub{ font-size:13px; letter-spacing:3px; color:var(--ink-2); }
+.irma-quote{ font-size:clamp(21px,5.4vw,27px); line-height:1.5; color:var(--ink); }
+.irma-attr{ font-size:14.5px; color:var(--ink-2); letter-spacing:.4px; }
+.irma-yes-tag{ font-size:12px; letter-spacing:3px; color:var(--ink-2); }
+.dance-title,.future-title,.tl-title,.gifts-title{ font-size:clamp(30px,6vw,50px); }
+.cd-lbl{ font-size:11px; letter-spacing:3px; color:var(--ink-2); }
+.gift-name{ font-size:15px; color:var(--ink); line-height:1.4; min-height:42px; }
+.gift-price{ font-size:16px; font-weight:600; }
+.gift-store{ font-size:11.5px; color:var(--ink-3); }
+.prod-name{ font-size:clamp(26px,5vw,36px); }
+.prod-spec{ font-size:16px; line-height:1.75; color:var(--ink-2); }
+.prod-price{ font-size:24px; }
+
+/* nomes: & preto (nunca letra rosa) */
+.hero-names .amp{ color:var(--ink); }
+/* esconde os efeitos de folha rosa do hero */
+.hero-corner{ display:none !important; }
+.hero-emblem{ width:clamp(210px,30vw,300px); }
+.scroll-cue span{ color:var(--ink-3); font-size:9px; }
+
+/* ---- página de presentes: cabeçalho enxuto ---- */
+.gifts-head{ padding:64px 20px 24px; }
+.gifts-sub{ font-family:var(--font-caps); letter-spacing:6px; font-size:13px; color:var(--ink-2); margin-top:8px; }
+.gifts-note{ margin:26px auto 0; max-width:640px; background:var(--surface-2); border:1px solid var(--line); border-radius:var(--r-md); padding:18px 22px; font-size:14px; line-height:1.7; color:var(--ink-2); text-align:center; }
+.gifts-note b{ color:var(--ink); font-weight:600; }
+
+/* ═══════════ BARRA INFERIOR ═══════════ */
+.tabbar{ position:fixed; left:0; right:0; bottom:0; z-index:130; display:flex; background:rgba(255,255,255,.94); backdrop-filter:blur(16px); border-top:1px solid var(--line); padding:7px 0 calc(7px + env(safe-area-inset-bottom)); box-shadow:0 -2px 20px rgba(17,17,17,.04); }
+.tabbar-item{ flex:1; background:none; border:none; cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:4px; color:var(--ink-3); font-family:var(--font-caps); font-size:10px; letter-spacing:1.5px; text-transform:uppercase; padding:6px 0 3px; position:relative; transition:color .2s; }
+.tabbar-item .tb-ico{ width:25px; height:25px; }
+.tabbar-item.active{ color:var(--ink); }
+.tabbar-item.active::before{ content:''; position:absolute; top:-7px; width:28px; height:3px; border-radius:0 0 3px 3px; background:var(--pink-strong); }
+
+/* ═══════════ LINHA DO TEMPO — repaginada ═══════════ */
+.tl-sec{ padding:76px 20px 90px; }
+.tl-lead{ font-size:16px; color:var(--ink-2); max-width:440px; margin:10px auto 48px; }
+.tl-node.active .tl-dot{ border:3px solid var(--ink); box-shadow:0 6px 0 rgba(17,17,17,.14); }   /* borda PRETA */
+.tl-dot{ width:70px; height:70px; }
+.tl-here{ margin-top:10px; font-family:var(--font-caps); font-size:10.5px; letter-spacing:1.5px; text-transform:uppercase; color:var(--ink); font-weight:600; background:linear-gradient(transparent 72%, var(--pink) 72%, var(--pink) 92%, transparent 92%); padding:1px 5px; border-radius:2px; }
+.tl-connector{ background:repeating-linear-gradient(to bottom,#cfcaccc 0 7px,transparent 7px 15px); background:repeating-linear-gradient(to bottom,#c9c4c7 0 7px,transparent 7px 15px); }
+.tl-lockimg{ width:30px; height:30px; opacity:.85; }
+.tl-lockmini{ width:13px; height:13px; vertical-align:-2px; margin-right:2px; opacity:.7; }
+.tl-card{ border-radius:var(--r-lg); padding:26px 26px 28px; box-shadow:var(--sh-2); border:1px solid var(--line); }
+.tl-phase{ font-size:10.5px; letter-spacing:2.5px; color:var(--ink); }
+.tl-node.active .tl-phase .grife{ background:linear-gradient(transparent 72%, var(--pink) 72%, var(--pink) 92%, transparent 92%); }
+.tl-card h3{ font-family:var(--font-display); font-weight:500; font-size:clamp(24px,4.4vw,32px); margin:10px 0 12px; display:flex; align-items:center; gap:8px; }
+.tl-emoji{ font-size:.7em; }
+.tl-date{ font-size:16px; color:var(--ink); font-weight:600; }
+.tl-addr{ font-size:14.5px; color:var(--ink-2); margin-top:5px; line-height:1.55; }
+.tl-actions{ flex-direction:column; gap:10px; margin-top:20px; }
+.btn-mini{ font-size:11px; letter-spacing:1.5px; padding:14px 18px; border-radius:var(--r-pill); justify-content:center; width:100%; }
+.btn-mini.solid{ background:var(--ink); border-color:var(--ink); color:#fff; }
+.btn-mini.solid:hover{ background:#000; border-color:#000; color:#fff; }
+.btn-mini.ghost{ background:#fff; color:var(--ink); border:1px solid #d9d6d7; }
+.btn-mini.ghost:hover{ background:var(--ink); border-color:var(--ink); color:#fff; }
+.tl-soon{ font-size:12.5px; color:var(--ink-3); margin-top:14px; }
+
+/* ---- menos vazio / fontes melhores no celular ---- */
+@media (max-width:640px){
+  body{ font-size:16.5px; }
+  .hero{ padding:36px 20px 64px; min-height:auto; }
+  .dance-sec,.photos-sec,.cd-sec,.irma-sec,.future-sec{ padding:54px 18px; }
+  .tl-sec{ padding:52px 16px 70px; }
+  .gifts-head{ padding:52px 18px 20px; }
+  .grid-wrap{ padding:20px 14px 80px; }
+  .tl-node{ gap:16px; }
+  .tl-dot{ width:60px; height:60px; }
+  .irma-inner{ max-width:100%; }
+  .cd-wrap{ gap:18px; }
+}
