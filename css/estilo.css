@@ -646,3 +646,7 @@ main{ padding-top:98px; }
 .prod-bought:hover{ color:var(--ink); }
 button.prog-status.todo{ border:none; cursor:pointer; font-family:var(--font-caps); transition:transform .15s, background .2s; }
 button.prog-status.todo:hover{ transform:translateX(2px); background:#000; }
+
+/* REVISÃO 5.2 — selos como imagem (fundo transparente, recorte no topo) */
+.badge-img{ object-fit:cover; object-position:center 12%; display:block; }
+.lu-badge .badge-img{ filter:drop-shadow(0 10px 26px rgba(0,0,0,.45)); }

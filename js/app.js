@@ -282,12 +282,14 @@ function fireConfetti(){
    PROGRESSO — selos de cera (Ferro→Diamante)
    ════════════════════════════════════════════════════════════ */
 const LEVELS = [
-  { key:'ferro',    nome:'Ferro',    c1:'#fbe4f2', c2:'#f0c2e0', desc:'Adicionou lembrete no calendário',      locked:false },
-  { key:'bronze',   nome:'Bronze',   c1:'#f6c9e3', c2:'#e79fce', desc:'Reservou um presente de cama e banho',  locked:false },
-  { key:'prata',    nome:'Prata',    c1:'#EF9CD0', c2:'#df79bb', desc:'Confirmou presença no casamento',       locked:true, soon:'em breve' },
-  { key:'ouro',     nome:'Ouro',     c1:'#e06fb4', c2:'#c94f9c', desc:'Adicionou o lembrete do casamento',     locked:true, soon:'em breve' },
-  { key:'diamante', nome:'Diamante', c1:'#cf4f97', c2:'#a83b7c', desc:'Reservou um presente de casamento',      locked:true, soon:'em breve' },
+  { key:'ferro',    nome:'Ferro',    img:'selo_ferro.png',    desc:'Adicionou lembrete no calendário',      locked:false },
+  { key:'bronze',   nome:'Bronze',   img:'selo_bronze.png',   desc:'Reservou um presente de cama e banho',  locked:false },
+  { key:'prata',    nome:'Prata',    img:'selo_prata.png',    desc:'Confirmou presença no casamento',       locked:true, soon:'em breve' },
+  { key:'ouro',     nome:'Ouro',     img:'selo_ouro.png',     desc:'Adicionou o lembrete do casamento',     locked:true, soon:'em breve' },
+  { key:'diamante', nome:'Diamante', img:'selo_diamante.png', desc:'Reservou um presente de casamento',     locked:true, soon:'em breve' },
 ];
+/* selo do nível = imagem enviada pelos noivos (fundo transparente) */
+function badgeHTML(l, size){ return `<img class="badge-img" src="${l.img}" alt="Selo ${l.nome}" style="width:${size}px;height:${size}px">`; }
 let levels = load('mr_levels', {});
 let pendingCal = false;
 function currentLevel(){ let last=null; for(const l of LEVELS){ if(levels[l.key]) last=l; } return last; }
@@ -326,7 +328,7 @@ function renderProgress(){
                  : soon ? `<span class="prog-status soon"><img class="tl-lockmini" src="lock.svg" alt=""> ${l.soon||'em breve'}</span>`
                         : `<button class="prog-status todo" onclick="progAction('${l.key}')">Fazer agora →</button>`;
     const node=`<div class="prog-node ${on?'on':(soon?'soon':'todo')}">
-        <div class="prog-badge">${badgeSVG(l,90,on)}</div>
+        <div class="prog-badge">${badgeHTML(l,90)}</div>
         <div class="prog-info">
           <span class="prog-name">${l.nome}</span>
           <span class="prog-desc">${l.desc}</span>
@@ -349,7 +351,7 @@ function celebrateLevel(l){
   fireConfetti();                       // 1) confete primeiro
   setTimeout(()=>{                       // 2) depois entra o selo evoluindo
     const o=$('#levelupOverlay'), c=$('#levelupCard');
-    c.innerHTML=`<div class="lu-badge">${badgeSVG(l,152,true)}</div>
+    c.innerHTML=`<div class="lu-badge">${badgeHTML(l,152)}</div>
       <span class="lu-tag">Nível desbloqueado</span>
       <h3 class="lu-name">Agora você é<br><b>Nível ${l.nome}</b></h3>
       <p class="lu-desc">${l.desc}</p>`;
