@@ -169,7 +169,8 @@ function renderProduct(id){
              <button class="prod-cancel" onclick="cancelGift('${p.id}')">Cancelar presente</button>`
           : taken
           ? `<div class="prod-tip"><b>Presente já reservado</b> por outro convidado.<br>Que tal escolher outro? 💕</div>`
-          : `<a class="prod-buy" href="${p.link}" target="_blank" rel="noopener" onclick="markPending('${p.id}')">
+          : `${ !levels['bronze'] ? `<div class="prod-incentivo"><img class="pi-selo" src="selo_bronze.png" alt="Selo Bronze"><div>Escolha este presente e <b>ganhe o selo de Bronze</b> 🥉</div></div>` : '' }
+             <a class="prod-buy" href="${p.link}" target="_blank" rel="noopener" onclick="markPending('${p.id}')">
                <svg viewBox="0 0 24 24" fill="none"><path d="M6 8h12l-1 12H7L6 8z" stroke="#fff" stroke-width="1.6" stroke-linejoin="round"/><path d="M9 8V6a3 3 0 0 1 6 0v2" stroke="#fff" stroke-width="1.6" stroke-linecap="round"/></svg>
                Comprar na loja
              </a>
@@ -234,21 +235,27 @@ function askGiftConfirm(){
 function showGiftStep(id){ document.querySelectorAll('#giftModalOverlay .modal-step').forEach(s=>s.classList.remove('active')); $('#'+id).classList.add('active'); }
 function closeGiftModal(){ $('#giftModalOverlay').classList.remove('open'); pendingGift=null; }
 
-async function confirmGift(){
+function confirmGift(){
   const id=pendingGift; if(!id) return;
   const primeiroPresente = !levels['bronze'];   // 1º presente desbloqueia o nível Bronze
-  await reserveWrite(id, 'reservar');
-  await loadProducts();
+  setReservedNow(id, guestToken);               // reserva na hora
+  reserveWrite(id, 'reservar');                 // sincroniza servidor em segundo plano
   pendingGift=null;
   updateBadges(); renderGrid();
   if (primeiroPresente){ closeGiftModal(); unlockLevel('bronze'); }  // celebração de nível
   else { showGiftStep('gstep-done'); fireConfetti(); }
 }
-async function cancelGift(id){
-  await reserveWrite(id, 'cancelar');
-  await loadProducts();
+function cancelGift(id){
+  setReservedNow(id, '');            // remove na hora (sem esperar a planilha)
+  reserveWrite(id, 'cancelar');      // sincroniza servidor em segundo plano
   updateBadges(); renderGrid(); renderDrawer();
   if (location.hash.includes('produto/')) renderProduct(id);
+}
+/* atualização OTIMISTA (na hora) — some o delay de esperar a planilha */
+function setReservedNow(id, val){
+  const p=productById(id); if(p) p.reservado=val;                       // modo servidor
+  if(val) localReserved[id]=guestToken; else delete localReserved[id];  // modo exemplo
+  save('mr_localReserved', localReserved);
 }
 /* grava reserva no servidor (ou local, no modo exemplo) */
 async function reserveWrite(id, acao){
@@ -265,17 +272,19 @@ async function reserveWrite(id, acao){
 /* ════════════════════════════════════════════════════════════
    CONFETE ROSA (não muito claro)
    ════════════════════════════════════════════════════════════ */
+let _mc = null; // instância do confete (criada UMA vez — recriar quebra o canvas)
 function fireConfetti(){
   if(!window.confetti) return;
-  const myConfetti = confetti.create($('#confetti-canvas'), { resize:true, useWorker:true });
-  const cores = ['#EF9CD0','#d9569f','#c2478b','#ffffff','#171717'];
-  const fim = Date.now()+1400;
+  if(!_mc){ try{ _mc = confetti.create($('#confetti-canvas'), { resize:true, useWorker:false }); }catch(e){ _mc=window.confetti; } }
+  const mc = _mc || window.confetti;
+  const cores = ['#EF9CD0','#f297b8','#e572b4','#d9569f','#ffffff','#fbe4f2']; // paleta rosa (rosa claro→escuro + branco)
+  const fim = Date.now()+1200;
   (function frame(){
-    myConfetti({ particleCount:5, angle:60, spread:60, origin:{x:0}, colors:cores, scalar:1.05 });
-    myConfetti({ particleCount:5, angle:120, spread:60, origin:{x:1}, colors:cores, scalar:1.05 });
+    mc({ particleCount:6, angle:60, spread:65, origin:{x:0,y:0.65}, colors:cores, scalar:1.05 });
+    mc({ particleCount:6, angle:120, spread:65, origin:{x:1,y:0.65}, colors:cores, scalar:1.05 });
     if(Date.now()<fim) requestAnimationFrame(frame);
   })();
-  myConfetti({ particleCount:120, spread:90, startVelocity:42, origin:{y:0.55}, colors:cores, scalar:1.1 });
+  mc({ particleCount:150, spread:100, startVelocity:45, origin:{y:0.5}, colors:cores, scalar:1.1 });
 }
 
 /* ════════════════════════════════════════════════════════════
@@ -336,7 +345,16 @@ function renderProgress(){
         </div>
       </div>`;
     return node + (i<LEVELS.length-1?`<div class="prog-connect ${on?'on':''}"></div>`:'');
-  }).join('');
+  }).join('') + `<div class="prog-reset-wrap"><button class="prog-reset" onclick="openResetModal()">↺ Reiniciar meu progresso</button></div>`;
+}
+function openResetModal(){ $('#resetOverlay').classList.add('open'); }
+function closeResetModal(){ $('#resetOverlay').classList.remove('open'); }
+function resetProgress(){
+  ['mr_levels','mr_wishlist','mr_selectedGift','mr_localReserved','mr_takenGifts'].forEach(k=>{ try{ localStorage.removeItem(k); }catch(e){} });
+  levels={}; wishlist=[]; localReserved={};
+  PRODUCTS.forEach(p=>p.reservado='');
+  closeResetModal(); updateBadges(); renderGrid(); renderProgress();
+  go('progresso');
 }
 
 function unlockLevel(key){
@@ -483,8 +501,11 @@ iv.addEventListener('timeupdate', ()=>{ if(iv.currentTime>iv.duration*0.6 && iv.
 /* Vídeo da dança: toca sozinho quando aparece na tela (mudo, por política do navegador) */
 const dv=document.querySelector('.video-land');
 if(dv){
-  dv.muted=true; dv.setAttribute('playsinline','');
-  new IntersectionObserver(es=>es.forEach(e=>{ if(e.isIntersecting){ dv.play().catch(()=>{}); } else { dv.pause(); } }), {threshold:0.4}).observe(dv);
+  let danceSound=false;                       // vira true no 1º toque (política de áudio do navegador)
+  dv.muted=true; dv.volume=0.8; dv.setAttribute('playsinline','');
+  new IntersectionObserver(es=>es.forEach(e=>{ if(e.isIntersecting){ dv.muted=!danceSound; dv.play().catch(()=>{}); } else { dv.pause(); } }), {threshold:0.35}).observe(dv);
+  const unmute=()=>{ danceSound=true; dv.muted=false; dv.volume=0.8; };
+  ['pointerdown','touchstart','keydown'].forEach(ev=>document.addEventListener(ev, unmute, {once:true}));
 }
 
 /* ════════════════════════════════════════════════════════════

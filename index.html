@@ -7,7 +7,7 @@
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23EF9CD0' d='M12 21s-8-5.3-8-11a4.5 4.5 0 0 1 8-2.9A4.5 4.5 0 0 1 20 10c0 5.7-8 11-8 11z'/%3E%3C/svg%3E">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400;1,500&family=Jost:wght@200;300;400;500;600&display=swap" rel="stylesheet">
 <link href="https://fonts.googleapis.com/css2?family=Pinyon+Script&family=Poppins:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400;1,500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/estilo.css?v=20260921h">
+<link rel="stylesheet" href="css/estilo.css?v=20260921i">
 </head>
 <body>
 <canvas id="canvas"></canvas>
@@ -99,7 +99,7 @@
       <h2 class="dance-title reveal d1">Já estamos treinando por aqui!</h2>
       <p class="dance-sub reveal d2">e não vai parar tão cedo</p>
       <div class="reveal-scale d2">
-        <video class="video-land" controls playsinline preload="metadata" poster="foto_danca.jpg">
+        <video class="video-land" playsinline muted loop preload="auto" poster="foto_danca.jpg">
           <source src="video_danca.mp4" type="video/mp4">
         </video>
       </div>
@@ -134,7 +134,7 @@
       <span class="eyebrow reveal">há 4 anos atrás...</span>
       <div class="thin-line reveal d1"></div>
       <p class="irma-quote reveal d2">"O Matheus vai casar com a Rafaella?"</p>
-      <p class="irma-attr reveal d2">— nossa irmã, sem querer errar</p>
+      <p class="irma-attr reveal d2">nenhum tinha caído antes!</p>
       <div class="reveal-scale d3">
         <div class="vid-wrap">
           <video class="video-port" controls playsinline preload="metadata" id="irmaVideo" style="width:100%;display:block;box-shadow:0 20px 60px rgba(217,86,159,.14);">
@@ -274,6 +274,18 @@
   </div>
 </div>
 
+<!-- ═══════════ CONFIRMAÇÃO DE RESET ═══════════ -->
+<div class="modal-overlay" id="resetOverlay">
+  <div class="modal">
+    <div class="modal-icon">↺</div>
+    <span class="modal-eyebrow">Reiniciar progresso</span>
+    <h2 class="modal-title">Tem certeza que quer<br>reiniciar tudo?</h2>
+    <p class="modal-nota" style="opacity:1;font-size:13px;margin-bottom:24px;">Seus <b>presentes</b>, <b>lista de desejos</b> e <b>selos</b> serão todos apagados, e você precisará fazer tudo de novo.</p>
+    <button class="modal-btn-yes" onclick="resetProgress()">Sim, reiniciar tudo</button>
+    <button class="modal-btn-no" onclick="closeResetModal()">Cancelar</button>
+  </div>
+</div>
+
 <!-- ═══════════ CELEBRAÇÃO DE NÍVEL ═══════════ -->
 <div class="levelup-overlay" id="levelupOverlay">
   <div class="levelup-card" id="levelupCard"></div>
@@ -281,8 +293,8 @@
 
 <canvas id="confetti-canvas"></canvas>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/canvas-confetti/1.9.3/confetti.browser.min.js"></script>
+<script src="js/confetti.min.js?v=20260921i"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/bodymovin/5.12.2/lottie.min.js"></script>
-<script src="js/app.js?v=20260921h"></script>
+<script src="js/app.js?v=20260921i"></script>
 </body>
 </html>

@@ -650,3 +650,28 @@ button.prog-status.todo:hover{ transform:translateX(2px); background:#000; }
 /* REVISÃO 5.2 — selos como imagem (fundo transparente, recorte no topo) */
 .badge-img{ object-fit:cover; object-position:center 12%; display:block; }
 .lu-badge .badge-img{ filter:drop-shadow(0 10px 26px rgba(0,0,0,.45)); }
+
+/* ═══════════════════════════════════════════════════════════════
+   REVISÃO 6 — cabeçalho mais claro, selos sem corte, imagens de
+   presente, incentivo, botão reiniciar
+   ═══════════════════════════════════════════════════════════════ */
+/* cabeçalho no tom do selo prata, clareado */
+.nav{ background:#f6b6cd; }
+
+/* selos sem corte (mostra do topo; recorta só a área transparente de baixo) */
+.badge-img{ object-fit:cover; object-position:center top; }
+
+/* imagens dos presentes: produto (PNG transparente) sobre o fundo rosado, sem cortar */
+.gift-media img{ object-fit:contain; padding:9%; }
+.prod-media img{ object-fit:contain; padding:6%; }
+
+/* incentivo na página de produto */
+.prod-incentivo{ display:flex; align-items:center; gap:12px; background:var(--pink-2); border:1px solid var(--pink-soft); border-radius:var(--r-md); padding:12px 14px; margin-bottom:14px; font-size:13.5px; line-height:1.4; color:var(--ink); }
+.prod-incentivo b{ font-weight:700; }
+.pi-selo{ width:52px; height:52px; object-fit:cover; object-position:center top; flex-shrink:0; }
+
+/* botão reiniciar progresso */
+.prog-reset-wrap{ text-align:center; margin-top:40px; }
+.prog-reset{ background:none; border:1px solid var(--line); border-radius:999px; padding:12px 24px; font-family:var(--font-caps); font-size:11.5px; font-weight:600; letter-spacing:1px; text-transform:uppercase; color:var(--ink-3); cursor:pointer; transition:.2s; }
+.prog-reset:hover{ border-color:#e0a; color:#c0392b; }
+#resetOverlay .modal-icon{ font-size:40px; }
