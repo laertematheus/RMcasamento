@@ -675,3 +675,22 @@ button.prog-status.todo:hover{ transform:translateX(2px); background:#000; }
 .prog-reset{ background:none; border:1px solid var(--line); border-radius:999px; padding:12px 24px; font-family:var(--font-caps); font-size:11.5px; font-weight:600; letter-spacing:1px; text-transform:uppercase; color:var(--ink-3); cursor:pointer; transition:.2s; }
 .prog-reset:hover{ border-color:#e0a; color:#c0392b; }
 #resetOverlay .modal-icon{ font-size:40px; }
+
+/* ═══════════════════════════════════════════════════════════════
+   REVISÃO 7 — badge #EF9CD0, espaçamento, mensagens, recompensa
+   ═══════════════════════════════════════════════════════════════ */
+/* "estamos aqui" na cor da marca */
+.tl-badge{ background:#EF9CD0; }
+
+/* menos vazio entre o vídeo da irmã e a viagem no tempo */
+.irma-sec{ padding-bottom:36px; }
+.irma-reveal{ margin-top:34px; }
+.future-sec{ padding-top:44px; }
+
+/* mensagem no cabeçalho dos presentes */
+.gifts-msg{ max-width:520px; margin:14px auto 0; font-size:13.5px; line-height:1.6; color:var(--ink-2); }
+
+/* recompensa do Diamante na barra de progresso */
+.prog-prize{ margin-top:34px; padding:20px 22px; background:var(--pink-2); border:1px dashed var(--pink-strong); border-radius:var(--r-lg); text-align:center; font-size:14px; line-height:1.6; color:var(--ink); }
+.prog-prize b{ font-weight:700; }
+.prog-prize-tag{ display:block; font-family:var(--font-caps); font-size:10px; letter-spacing:2px; text-transform:uppercase; color:var(--ink); font-weight:700; margin-bottom:6px; }

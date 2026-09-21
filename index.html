@@ -7,7 +7,7 @@
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23EF9CD0' d='M12 21s-8-5.3-8-11a4.5 4.5 0 0 1 8-2.9A4.5 4.5 0 0 1 20 10c0 5.7-8 11-8 11z'/%3E%3C/svg%3E">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400;1,500&family=Jost:wght@200;300;400;500;600&display=swap" rel="stylesheet">
 <link href="https://fonts.googleapis.com/css2?family=Pinyon+Script&family=Poppins:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400;1,500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/estilo.css?v=20260921i">
+<link rel="stylesheet" href="css/estilo.css?v=20260921j">
 </head>
 <body>
 <canvas id="canvas"></canvas>
@@ -67,7 +67,7 @@
             <span class="tl-badge">Estamos aqui</span>
           </div>
           <span class="tl-phase"><span class="grife">Fase 1 · Desbloqueada</span></span>
-          <h3>Casamento no Civil <span class="tl-emoji">💍</span></h3>
+          <h3>Casamento no Civil <span class="tl-emoji"></span></h3>
           <p class="tl-date">14 de novembro de 2026 · almoço às 13h</p>
           <p class="tl-addr">Rua Frei Bartolomeu Pilar, 191<br>Vila Constança · São Paulo — SP</p>
           <div class="tl-actions">
@@ -134,18 +134,11 @@
       <span class="eyebrow reveal">há 4 anos atrás...</span>
       <div class="thin-line reveal d1"></div>
       <p class="irma-quote reveal d2">"O Matheus vai casar com a Rafaella?"</p>
-      <p class="irma-attr reveal d2">nenhum tinha caído antes!</p>
+      <p class="irma-attr reveal d2">foi o único que caiu dentro!</p>
       <div class="reveal-scale d3">
-        <div class="vid-wrap">
-          <video class="video-port" controls playsinline preload="metadata" id="irmaVideo" style="width:100%;display:block;box-shadow:0 20px 60px rgba(217,86,159,.14);">
-            <source src="video_irma.mp4" type="video/mp4">
-          </video>
-          <div class="vid-date-overlay" id="irmaDateOverlay">
-            <span class="vid-date-tag">naquela época</span>
-            <span class="vid-date-year" id="irmaYear">2022</span>
-            <div class="vid-date-play"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></div>
-          </div>
-        </div>
+        <video class="video-port" playsinline muted loop preload="auto" id="irmaVideo" style="width:100%;display:block;box-shadow:0 20px 60px rgba(217,86,159,.14);">
+          <source src="video_irma.mp4" type="video/mp4">
+        </video>
       </div>
       <div class="irma-reveal" id="irmaReveal">
         <div class="thin-line" style="margin:48px auto 28px;"></div>
@@ -163,14 +156,14 @@
       <img src="foto_familia1.jpg" alt="Família" class="reveal-left d2">
       <img src="foto_familia2.jpg" alt="Família" class="reveal-right d3">
     </div>
-    <p class="future-cap reveal d4">* preparem o almoço de domingo 😂</p>
+    <p class="future-cap reveal d4">* preparem o almoço de domingo</p>
   </section>
 
   <footer>
     <img class="footer-emblem" src="simbolo_casal.svg" alt="Matheus e Rafaella">
     <span class="footer-names">Matheus &amp; Rafaella</span>
     <p class="footer-date">Casamento no civil · 14 de novembro de 2026</p>
-    <p class="footer-credit">desenvolvido pelo noivo 😎</p>
+    <p class="footer-credit">desenvolvido pelo noivo</p>
   </footer>
 </div>
 
@@ -180,12 +173,13 @@
     <span class="eyebrow"><span class="grife">Chá de Cama &amp; Banho</span></span>
     <h2 class="gifts-title">Lista de Presentes</h2>
     <p class="gifts-sub">14 · 11 · 2026</p>
+    <p class="gifts-msg">Pedimos que envie a compra para a sua residência, assim você poderá nos entregar em mãos no dia.</p>
   </div>
   <div class="grid-wrap">
     <div class="gift-grid" id="giftGrid"></div>
     <div class="gifts-note">
-      Você pode comprar cada item <b>na loja que preferir</b> — vale procurar o melhor preço, cupons e promoções.
-      Para <b>cashback</b>, recomendamos o <b>Méliuz</b>. Ao escolher um presente, ele sai da lista para que ninguém repita. 🎁
+      Nós escolhemos os itens que mais combinam com a nossa casa. Colocamos uma <b>sugestão de loja</b> onde encontramos o melhor preço, mas você pode buscar melhor pela internet.
+      Para <b>cashback</b>, recomendamos o <b>Méliuz</b>. Ao escolher seu presente, ele sairá da lista para que ninguém repita.
     </div>
   </div>
 </div>
@@ -201,7 +195,7 @@
     <span class="eyebrow"><span class="grife">Sua jornada</span></span>
     <h2 class="gifts-title">Progresso</h2>
     <p class="prog-tag" id="progTag">—</p>
-    <p class="prog-lead">Complete cada passo e evolua o seu selo. 🌹</p>
+    <p class="prog-lead">Complete cada passo e evolua o seu selo.</p>
   </div>
   <div class="prog-path" id="progPath"></div>
 </div>
@@ -229,7 +223,7 @@
       <button class="modal-btn-primary" id="btnBuscar">Continuar →</button>
     </div>
     <div class="modal-step" id="step2">
-      <span class="modal-eyebrow">Encontramos sua família 💕</span>
+      <span class="modal-eyebrow">Encontramos sua família</span>
       <h2 class="modal-title">Confirma a presença de</h2>
       <span class="modal-familia" id="familiaName"></span>
       <input class="modal-input" id="inputTel" type="tel" placeholder="WhatsApp com DDD (opcional)"/>
@@ -238,13 +232,13 @@
       <p class="modal-nota">Caso haja mais alguém além dos listados,<br>entre em contato diretamente com os noivos.</p>
     </div>
     <div class="modal-step" id="step3sim">
-      <div class="modal-icon">💕</div>
+      <div class="modal-icon"></div>
       <span class="modal-eyebrow">Presença confirmada!</span>
       <h2 class="modal-title">Até lá!</h2>
       <p class="modal-nota" style="opacity:1;font-size:13px;line-height:1.9;">Estamos muito felizes em ter você nesse dia especial.<br>Em breve você receberá mais detalhes!</p>
     </div>
     <div class="modal-step" id="step3nao">
-      <div class="modal-icon">🥹</div>
+      <div class="modal-icon"></div>
       <span class="modal-eyebrow">Resposta registrada</span>
       <h2 class="modal-title">Vai fazer falta!</h2>
       <p class="modal-nota" style="opacity:1;font-size:13px;line-height:1.9;">Obrigado por nos avisar.<br>Se mudar de ideia, entre em contato com os noivos.</p>
@@ -260,15 +254,15 @@
       <span class="modal-eyebrow">Voltou da loja?</span>
       <h2 class="modal-title">Você selecionou<br>este presente?</h2>
       <div class="modal-prod-preview" id="giftModalPreview"></div>
-      <p class="modal-nota" style="margin-top:0;margin-bottom:22px;">Se sim, vamos retirá-lo da lista do site<br>para que outro convidado não escolha o mesmo. 💕</p>
+      <p class="modal-nota" style="margin-top:0;margin-bottom:22px;">Se sim, vamos retirá-lo da lista do site<br>para que outro convidado não escolha o mesmo.</p>
       <button class="modal-btn-yes" onclick="confirmGift()">✓ &nbsp;Sim, é esse o meu presente</button>
       <button class="modal-btn-no" onclick="closeGiftModal()">Ainda não</button>
     </div>
     <div class="modal-step" id="gstep-done">
-      <div class="modal-icon">🎁</div>
+      <div class="modal-icon"></div>
       <span class="modal-eyebrow">Presente reservado!</span>
       <h2 class="modal-title">Muito obrigado!</h2>
-      <p class="modal-nota" style="opacity:1;font-size:13px;line-height:1.9;">Que carinho enorme. 💕<br>Seu presente já está guardado na sua sacola.</p>
+      <p class="modal-nota" style="opacity:1;font-size:13px;line-height:1.9;">Que carinho enorme.<br>Seu presente já está guardado na sua sacola.</p>
       <button class="modal-btn-primary" style="margin-top:22px;" onclick="closeGiftModal()">Fechar</button>
     </div>
   </div>
@@ -295,6 +289,6 @@
 
 <script src="js/confetti.min.js?v=20260921i"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/bodymovin/5.12.2/lottie.min.js"></script>
-<script src="js/app.js?v=20260921i"></script>
+<script src="js/app.js?v=20260921j"></script>
 </body>
 </html>

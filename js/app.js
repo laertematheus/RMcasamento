@@ -121,12 +121,12 @@ async function ensureProductsAndRenderGrid(){
    ════════════════════════════════════════════════════════════ */
 function renderGrid(){
   const grid = $('#giftGrid');
-  if (!PRODUCTS.length){ grid.innerHTML = `<p style="grid-column:1/-1;text-align:center;color:var(--ink-faint);padding:60px 0;">A lista de presentes chega em breve 💕</p>`; return; }
+  if (!PRODUCTS.length){ grid.innerHTML = `<p style="grid-column:1/-1;text-align:center;color:var(--ink-faint);padding:60px 0;">A lista de presentes chega em breve</p>`; return; }
   grid.innerHTML = PRODUCTS.map(p=>{
     const liked = wishlist.includes(p.id);
     const mine = isMine(p), taken = isTaken(p);
     let flag = '';
-    if (mine)  flag = `<div class="gift-reserved-flag"><span class="rf-ico">🎁</span><span class="rf-txt">Você escolheu 💕</span><span class="rf-sub">está na sua sacola</span></div>`;
+    if (mine)  flag = `<div class="gift-reserved-flag"><span class="rf-ico"></span><span class="rf-txt">Você escolheu</span><span class="rf-sub">está na sua sacola</span></div>`;
     else if (taken) flag = `<div class="gift-reserved-flag"><span class="rf-ico">🎀</span><span class="rf-txt">Já reservado</span><span class="rf-sub">por outro convidado</span></div>`;
     return `<article class="gift-card" data-id="${p.id}" onclick="openProduct('${p.id}')">
       <div class="gift-media">
@@ -165,17 +165,17 @@ function renderProduct(id){
         ${p.spec?`<p class="prod-spec-lbl">Especificação</p><p class="prod-spec">${p.spec}</p>`:''}
         ${p.loja?`<div class="prod-store-chip"><span class="dot"></span> Sugestão: ${p.loja}</div>`:''}
         ${ mine
-          ? `<div class="prod-tip" style="background:var(--pink-pale);border:1px solid var(--pink-soft);"><b>Este é o presente que você escolheu 💕</b><br>Ele está guardado na sua sacola.</div>
+          ? `<div class="prod-tip" style="background:var(--pink-pale);border:1px solid var(--pink-soft);"><b>Este é o presente que você escolheu</b><br>Ele está guardado na sua sacola.</div>
              <button class="prod-cancel" onclick="cancelGift('${p.id}')">Cancelar presente</button>`
           : taken
-          ? `<div class="prod-tip"><b>Presente já reservado</b> por outro convidado.<br>Que tal escolher outro? 💕</div>`
-          : `${ !levels['bronze'] ? `<div class="prod-incentivo"><img class="pi-selo" src="selo_bronze.png" alt="Selo Bronze"><div>Escolha este presente e <b>ganhe o selo de Bronze</b> 🥉</div></div>` : '' }
+          ? `<div class="prod-tip"><b>Presente já reservado</b> por outro convidado.<br>Que tal escolher outro?</div>`
+          : `${ !levels['bronze'] ? `<div class="prod-incentivo"><img class="pi-selo" src="selo_bronze.png" alt="Selo Bronze"><div>Escolha este presente e <b>ganhe o selo de Bronze</b></div></div>` : '' }
              <a class="prod-buy" href="${p.link}" target="_blank" rel="noopener" onclick="markPending('${p.id}')">
                <svg viewBox="0 0 24 24" fill="none"><path d="M6 8h12l-1 12H7L6 8z" stroke="#fff" stroke-width="1.6" stroke-linejoin="round"/><path d="M9 8V6a3 3 0 0 1 6 0v2" stroke="#fff" stroke-width="1.6" stroke-linecap="round"/></svg>
                Comprar na loja
              </a>
              <button class="prod-bought" onclick="manualBuy('${p.id}')">Já comprei este item ✓</button>
-             <div class="prod-tip">Você pode comprar este item <b>na loja que preferir</b>. Vale buscar cupons e promoções — e usar o <b>Méliuz</b> para ganhar cashback. 💰</div>` }
+             <div class="prod-tip">Você pode comprar este item <b>na loja que preferir</b>. Vale buscar cupons e promoções — e usar o <b>Méliuz</b> para ganhar cashback.</div>` }
       </div>
     </div>`;
 }
@@ -278,13 +278,12 @@ function fireConfetti(){
   if(!_mc){ try{ _mc = confetti.create($('#confetti-canvas'), { resize:true, useWorker:false }); }catch(e){ _mc=window.confetti; } }
   const mc = _mc || window.confetti;
   const cores = ['#EF9CD0','#f297b8','#e572b4','#d9569f','#ffffff','#fbe4f2']; // paleta rosa (rosa claro→escuro + branco)
-  const fim = Date.now()+1200;
-  (function frame(){
-    mc({ particleCount:6, angle:60, spread:65, origin:{x:0,y:0.65}, colors:cores, scalar:1.05 });
-    mc({ particleCount:6, angle:120, spread:65, origin:{x:1,y:0.65}, colors:cores, scalar:1.05 });
+  const fim = Date.now()+1500;
+  (function frame(){ // chuva suave do topo, espalhada na largura toda (partículas pequenas)
+    mc({ particleCount:4, startVelocity:0, ticks:240, gravity:0.65, spread:120, scalar:0.65, origin:{ x:Math.random(), y:-0.08 }, colors:cores });
     if(Date.now()<fim) requestAnimationFrame(frame);
   })();
-  mc({ particleCount:150, spread:100, startVelocity:45, origin:{y:0.5}, colors:cores, scalar:1.1 });
+  mc({ particleCount:70, spread:75, startVelocity:32, scalar:0.75, origin:{y:0.4}, colors:cores }); // estouro central suave
 }
 
 /* ════════════════════════════════════════════════════════════
@@ -345,7 +344,7 @@ function renderProgress(){
         </div>
       </div>`;
     return node + (i<LEVELS.length-1?`<div class="prog-connect ${on?'on':''}"></div>`:'');
-  }).join('') + `<div class="prog-reset-wrap"><button class="prog-reset" onclick="openResetModal()">↺ Reiniciar meu progresso</button></div>`;
+  }).join('') + `<div class="prog-prize"><span class="prog-prize-tag">Recompensa final</span>Chegando ao nível <b>Diamante</b>, uma surpresa especial dos noivos espera por você no fim da jornada.</div><div class="prog-reset-wrap"><button class="prog-reset" onclick="openResetModal()">↺ Reiniciar meu progresso</button></div>`;
 }
 function openResetModal(){ $('#resetOverlay').classList.add('open'); }
 function closeResetModal(){ $('#resetOverlay').classList.remove('open'); }
@@ -396,7 +395,7 @@ function renderDrawer(){
   if (drawerMode==='wishlist'){
     $('#drawerTitle').textContent='Lista de desejos';
     const items = wishlist.map(id=>productById(id)).filter(Boolean);
-    if(!items.length){ body.innerHTML=`<div class="drawer-empty">${heartSVG()}<p>Sua lista está vazia.<br>Toque no coração dos presentes que você amar. 💕</p></div>`; return; }
+    if(!items.length){ body.innerHTML=`<div class="drawer-empty">${heartSVG()}<p>Sua lista está vazia.<br>Toque no coração dos presentes que você amar.</p></div>`; return; }
     body.innerHTML=items.map(p=>`
       <div class="wl-item" onclick="closeDrawer();openProduct('${p.id}')">
         <div class="wl-thumb">${mediaHTML(p)}</div>
@@ -406,7 +405,7 @@ function renderDrawer(){
   } else {
     $('#drawerTitle').textContent='Meus presentes';
     const gifts = myGifts();
-    if(!gifts.length){ body.innerHTML=`<div class="drawer-empty"><svg viewBox="0 0 24 24" fill="none"><path d="M6 8h12l-1 12H7L6 8z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M9 8V6a3 3 0 0 1 6 0v2" stroke="currentColor" stroke-width="1.4"/></svg><p>Sua sacola está vazia.<br>Que tal escolher um presente? 🎁</p><button class="btn-mini solid" style="margin-top:22px;width:auto;" onclick="closeDrawer();go('presentes')">Ver presentes</button></div>`; return; }
+    if(!gifts.length){ body.innerHTML=`<div class="drawer-empty"><svg viewBox="0 0 24 24" fill="none"><path d="M6 8h12l-1 12H7L6 8z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M9 8V6a3 3 0 0 1 6 0v2" stroke="currentColor" stroke-width="1.4"/></svg><p>Sua sacola está vazia.<br>Que tal escolher um presente?</p><button class="btn-mini solid" style="margin-top:22px;width:auto;" onclick="closeDrawer();go('presentes')">Ver presentes</button></div>`; return; }
     body.innerHTML=`<div class="bag-selected">
       ${gifts.map(p=>`<div class="bag-card">
         <div class="wl-thumb">${mediaHTML(p)}</div>
@@ -414,7 +413,7 @@ function renderDrawer(){
         <button class="wl-remove" title="Cancelar presente" onclick="cancelGift('${p.id}')">✕</button>
       </div>`).join('')}
       <button class="btn-mini ghost" style="margin-top:16px;" onclick="closeDrawer();go('presentes')"><svg viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg> Adicionar mais presentes</button>
-      <p class="modal-nota" style="text-align:center;">Você pode reservar quantos quiser. Cancelar devolve o item à lista. 💕</p>
+      <p class="modal-nota" style="text-align:center;">Você pode reservar quantos quiser. Cancelar devolve o item à lista.</p>
     </div>`;
   }
 }
@@ -491,22 +490,19 @@ document.querySelectorAll('.reveal,.reveal-left,.reveal-right,.reveal-scale').fo
 /* ════════════════════════════════════════════════════════════
    VÍDEO DA IRMÃ (com data)
    ════════════════════════════════════════════════════════════ */
-$('#irmaYear').textContent = VIDEO_ANO;
-const iv=$('#irmaVideo'), ir=$('#irmaReveal'), ido=$('#irmaDateOverlay');
-ido.addEventListener('click', ()=>{ ido.classList.add('hidden'); iv.play(); });
-iv.addEventListener('play', ()=>ido.classList.add('hidden'));
-iv.addEventListener('ended', ()=>setTimeout(()=>ir.classList.add('show'),400));
-iv.addEventListener('timeupdate', ()=>{ if(iv.currentTime>iv.duration*0.6 && iv.duration>0) ir.classList.add('show'); });
-
-/* Vídeo da dança: toca sozinho quando aparece na tela (mudo, por política do navegador) */
-const dv=document.querySelector('.video-land');
-if(dv){
-  let danceSound=false;                       // vira true no 1º toque (política de áudio do navegador)
-  dv.muted=true; dv.volume=0.8; dv.setAttribute('playsinline','');
-  new IntersectionObserver(es=>es.forEach(e=>{ if(e.isIntersecting){ dv.muted=!danceSound; dv.play().catch(()=>{}); } else { dv.pause(); } }), {threshold:0.35}).observe(dv);
-  const unmute=()=>{ danceSound=true; dv.muted=false; dv.volume=0.8; };
-  ['pointerdown','touchstart','keydown'].forEach(ev=>document.addEventListener(ev, unmute, {once:true}));
+/* Os dois vídeos tocam sozinhos ao aparecer (estilo reels); som liga no 1º toque (política do navegador) */
+let soundOn=false;
+const ir=$('#irmaReveal'), iv=$('#irmaVideo');
+function setupReel(v){
+  if(!v) return;
+  v.muted=true; v.volume=0.8; v.setAttribute('playsinline','');
+  new IntersectionObserver(es=>es.forEach(e=>{ if(e.isIntersecting){ v.muted=!soundOn; v.play().catch(()=>{}); } else { v.pause(); } }), {threshold:0.3}).observe(v);
 }
+setupReel(document.querySelector('.video-land'));
+setupReel(iv);
+if(iv && ir){ iv.addEventListener('timeupdate', ()=>{ if(iv.currentTime>iv.duration*0.55 && iv.duration>0) ir.classList.add('show'); }); }
+const unmuteAll=()=>{ soundOn=true; document.querySelectorAll('video').forEach(v=>{ v.muted=false; v.volume=0.8; }); };
+['pointerdown','touchstart','keydown'].forEach(ev=>document.addEventListener(ev, unmuteAll, {once:true}));
 
 /* ════════════════════════════════════════════════════════════
    COUNTDOWN
@@ -529,7 +525,7 @@ function addCalendar(){
   const g='https://calendar.google.com/calendar/render?action=TEMPLATE'
     +'&text='+encodeURIComponent('Casamento Matheus e Rafa - Almoço 13h')
     +'&dates=20261114T160000Z/20261114T190000Z'
-    +'&details='+encodeURIComponent('Casamento no civil e Chá de Cama e Banho de Matheus e Rafaella. Almoço às 13h. Te esperamos! 💕')
+    +'&details='+encodeURIComponent('Casamento no civil e Chá de Cama e Banho de Matheus e Rafaella. Almoço às 13h. Te esperamos!')
     +'&location='+encodeURIComponent('Rua Frei Bartolomeu Pilar, 191 - Vila Constança, São Paulo - SP')
     +'&ctz=America/Sao_Paulo';
   window.open(g,'_blank','noopener');
