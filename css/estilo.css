@@ -694,3 +694,20 @@ button.prog-status.todo:hover{ transform:translateX(2px); background:#000; }
 .prog-prize{ margin-top:34px; padding:20px 22px; background:var(--pink-2); border:1px dashed var(--pink-strong); border-radius:var(--r-lg); text-align:center; font-size:14px; line-height:1.6; color:var(--ink); }
 .prog-prize b{ font-weight:700; }
 .prog-prize-tag{ display:block; font-family:var(--font-caps); font-size:10px; letter-spacing:2px; text-transform:uppercase; color:var(--ink); font-weight:700; margin-bottom:6px; }
+
+/* ═══════════════════════════════════════════════════════════════
+   REVISÃO 8 — quantidade por presente + imagens com fundo próprio
+   ═══════════════════════════════════════════════════════════════ */
+/* faixa "X de Y disponíveis" no card da grade */
+.gift-stock{ display:inline-block; margin-top:8px; font-family:var(--font-caps); font-size:10px; letter-spacing:.5px; font-weight:600; color:var(--pink-deep); background:var(--pink-pale); border:1px solid var(--pink-soft); border-radius:999px; padding:3px 10px; }
+
+/* aviso de disponibilidade na página do produto */
+.prod-stock{ font-size:13px; line-height:1.5; color:var(--pink-deep); background:var(--pink-pale); border:1px solid var(--pink-soft); border-radius:var(--r-md,10px); padding:10px 14px; margin-bottom:22px; }
+.prod-stock b{ font-weight:700; }
+.prod-stock.out{ color:var(--ink-soft); background:var(--surface-2,#f4f1f3); border-color:var(--line); }
+
+/* imagens que JÁ têm fundo (fotos de catálogo) preenchem o quadro,
+   sem a borda rosada e sem padding — visual de vitrine */
+.gift-media img.has-bg,
+.prod-media img.has-bg,
+.wl-thumb img.has-bg{ object-fit:cover; padding:0; }

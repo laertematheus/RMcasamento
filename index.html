@@ -3,11 +3,29 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Matheus & Rafaella · 02.05.2027</title>
+<title>Matheus & Rafaella</title>
+<meta name="description" content="Casamento no civil · 14 de novembro de 2026, São Paulo. Confirme sua presença e veja a lista de presentes de Matheus & Rafaella.">
+
+<!-- ═══ PREVIEW (WhatsApp / Google / redes) ═══
+     A imagem e a URL abaixo precisam ser ABSOLUTAS (com https://) para o
+     WhatsApp mostrar a foto. Estão apontando para o GitHub Pages.
+     >>> Se você publicar num domínio próprio, troque a base das 3 linhas
+         og:url, og:image e twitter:image pelo seu domínio. <<< -->
+<meta property="og:type" content="website">
+<meta property="og:title" content="Matheus & Rafaella">
+<meta property="og:description" content="Casamento no civil · 14 de novembro de 2026, São Paulo. Confirme sua presença e veja a lista de presentes.">
+<meta property="og:url" content="https://laertematheus.github.io/RMcasamento/">
+<meta property="og:image" content="https://laertematheus.github.io/RMcasamento/foto_casal.jpg">
+<meta property="og:image:alt" content="Matheus e Rafaella">
+<meta property="og:locale" content="pt_BR">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Matheus & Rafaella">
+<meta name="twitter:description" content="Casamento no civil · 14 de novembro de 2026, São Paulo.">
+<meta name="twitter:image" content="https://laertematheus.github.io/RMcasamento/foto_casal.jpg">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23EF9CD0' d='M12 21s-8-5.3-8-11a4.5 4.5 0 0 1 8-2.9A4.5 4.5 0 0 1 20 10c0 5.7-8 11-8 11z'/%3E%3C/svg%3E">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400;1,500&family=Jost:wght@200;300;400;500;600&display=swap" rel="stylesheet">
 <link href="https://fonts.googleapis.com/css2?family=Pinyon+Script&family=Poppins:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400;1,500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/estilo.css?v=20260921j">
+<link rel="stylesheet" href="css/estilo.css?v=20260921k">
 </head>
 <body>
 <canvas id="canvas"></canvas>
@@ -265,6 +283,13 @@
       <p class="modal-nota" style="opacity:1;font-size:13px;line-height:1.9;">Que carinho enorme.<br>Seu presente já está guardado na sua sacola.</p>
       <button class="modal-btn-primary" style="margin-top:22px;" onclick="closeGiftModal()">Fechar</button>
     </div>
+    <div class="modal-step" id="gstep-taken">
+      <div class="modal-icon">🎀</div>
+      <span class="modal-eyebrow">Esgotou por um instante</span>
+      <h2 class="modal-title">Alguém acabou<br>de reservar</h2>
+      <p class="modal-nota" style="opacity:1;font-size:13px;line-height:1.9;">Esse presente foi todo escolhido por outros convidados.<br>Que tal olhar outra opção da lista?</p>
+      <button class="modal-btn-primary" style="margin-top:22px;" onclick="closeGiftModal();go('presentes')">Ver outros presentes</button>
+    </div>
   </div>
 </div>
 
@@ -289,6 +314,6 @@
 
 <script src="js/confetti.min.js?v=20260921i"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/bodymovin/5.12.2/lottie.min.js"></script>
-<script src="js/app.js?v=20260921j"></script>
+<script src="js/app.js?v=20260921k"></script>
 </body>
 </html>

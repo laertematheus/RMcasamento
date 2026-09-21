@@ -25,18 +25,30 @@ function getSheet_() {
 
 /* Descobre em qual coluna está cada informação, pelo texto do cabeçalho */
 function mapColunas_(headers) {
-  var m = { nome:-1, loja:-1, link:-1, preco:-1, img:-1, spec:-1, reservado:-1 };
+  var m = { nome:-1, loja:-1, link:-1, preco:-1, img:-1, spec:-1, qtd:-1, fundo:-1, reservado:-1 };
   headers.forEach(function (h, i) {
     var t = String(h).toLowerCase();
     if (m.nome<0 && (t.indexOf('título')>=0 || t.indexOf('titulo')>=0 || t.indexOf('presente')>=0 || t.indexOf('nome')>=0)) m.nome=i;
     else if (m.loja<0 && t.indexOf('loja')>=0) m.loja=i;
     else if (m.link<0 && t.indexOf('link')>=0) m.link=i;
     else if (m.preco<0 && (t.indexOf('preço')>=0 || t.indexOf('preco')>=0 || t.indexOf('valor')>=0)) m.preco=i;
+    else if (m.qtd<0 && (t.indexOf('quantidade')>=0 || t.indexOf('qtd')>=0 || t.indexOf('unidade')>=0)) m.qtd=i;
+    else if (m.fundo<0 && t.indexOf('fundo')>=0) m.fundo=i;
     else if (m.img<0 && (t.indexOf('foto')>=0 || t.indexOf('imagem')>=0 || t.indexOf('image')>=0)) m.img=i;
     else if (m.spec<0 && (t.indexOf('descri')>=0 || t.indexOf('especifica')>=0 || t.indexOf('detalhe')>=0)) m.spec=i;
     else if (m.reservado<0 && t.indexOf('reservado')>=0) m.reservado=i;
   });
   return m;
+}
+
+/* lista de convidados que já reservaram uma unidade (tokens separados por vírgula) */
+function listaReservados_(cell) {
+  return String(cell || '').split(/[;,]/).map(function (s) { return s.trim(); }).filter(String);
+}
+function qtdDaLinha_(sheet, map, row) {
+  if (map.qtd < 0) return 1;
+  var v = parseInt(String(sheet.getRange(row, map.qtd + 1).getValue()).replace(/\D/g, ''), 10);
+  return v > 0 ? v : 1;
 }
 
 /* Garante que exista a coluna "Reservado" (cria no final se não existir) */
@@ -84,6 +96,8 @@ function getProdutos_() {
       preco: map.preco>=0 ? String(row[map.preco]||'') : '',
       img: map.img>=0 ? imgUrl_(row[map.img]) : '',
       spec: map.spec>=0 ? String(row[map.spec]||'') : '',
+      qtd: map.qtd>=0 ? String(row[map.qtd]||'1') : '1',
+      fundo: map.fundo>=0 ? String(row[map.fundo]||'') : '',
       reservado: map.reservado>=0 ? String(row[map.reservado]||'') : ''
     });
   }
@@ -116,19 +130,28 @@ function doPost(e) {
     var row = Number(body.id);
     if (!row || row < 2) return json_({ ok:false, reason:'id' });
 
+    var quem = String(body.quem || 'reservado');
+
     if (body.action === 'reservar') {
-      var atual = sheet.getRange(row, colReservado).getValue();
-      if (atual && String(atual) !== String(body.quem)) {
-        return json_({ ok:false, reason:'taken' }); // já reservado por outra pessoa
+      var qtd  = qtdDaLinha_(sheet, map, row);                       // quantas unidades esse presente tem
+      var list = listaReservados_(sheet.getRange(row, colReservado).getValue());
+      if (list.indexOf(quem) >= 0) {                                 // já é meu -> idempotente
+        return json_({ ok:true, reservado:list.join(','), restam: Math.max(0, qtd - list.length) });
       }
-      sheet.getRange(row, colReservado).setValue(body.quem || 'reservado');
+      if (list.length >= qtd) {                                      // acabou o estoque
+        return json_({ ok:false, reason:'esgotado', reservado:list.join(','), restam:0 });
+      }
+      list.push(quem);
+      sheet.getRange(row, colReservado).setValue(list.join(','));
+      return json_({ ok:true, reservado:list.join(','), restam: Math.max(0, qtd - list.length) });
+
     } else if (body.action === 'cancelar') {
-      var dono = sheet.getRange(row, colReservado).getValue();
-      if (!body.quem || String(dono) === String(body.quem) || !dono) {
-        sheet.getRange(row, colReservado).setValue('');
-      }
+      var list2 = listaReservados_(sheet.getRange(row, colReservado).getValue());
+      list2 = list2.filter(function (t) { return t !== quem; });     // tira só a minha unidade
+      sheet.getRange(row, colReservado).setValue(list2.join(','));
+      return json_({ ok:true, reservado:list2.join(',') });
     }
-    return json_({ ok:true });
+    return json_({ ok:false, reason:'acao' });
   } catch (err) {
     return json_({ ok:false, reason:String(err) });
   } finally {

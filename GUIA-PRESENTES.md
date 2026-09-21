@@ -17,12 +17,27 @@ O site puxa os presentes de uma **planilha do Google**, que é preenchida por um
    | **Loja de referência** | Resposta curta |
    | **Link do produto** | Resposta curta |
    | **Preço** | Resposta curta *(ex: 279,90 — só o número)* |
+   | **Quantidade** | Resposta curta *(quantas unidades desse item, ex: 1, 2, 4)* |
    | **Foto do presente** | **Envio de arquivo** (permitir imagens, 1 arquivo) |
+   | **Fundo?** *(opcional)* | Resposta curta *(escreva **sim** se a foto já tem cenário/fundo; deixe vazio se for PNG recortado)* |
    | **Descrição** *(opcional)* | Parágrafo |
 
    > A pergunta de **Foto** precisa ser do tipo **"Envio de arquivo"**. O Google
    > vai pedir para você ativar isso — é normal. Quem responder precisa estar
    > logado numa conta Google para subir a imagem.
+
+   > **Quantidade:** para itens baratos que várias pessoas podem dar (ex: uma
+   > toalha de R$50), coloque um número maior (ex: **3**). O site mostra
+   > "3 de 3 disponíveis" e vai baixando conforme os convidados escolhem — só
+   > some da lista quando a última unidade for reservada. Para um kit único
+   > (ex: jogo com 4 peças por R$200), coloque **1**. Se deixar em branco, o
+   > site entende como **1**.
+
+   > **Fundo?:** a maioria das lojas tem foto do produto recortado (fundo
+   > transparente PNG) — nesses, deixe em branco. Quando a única foto boa que
+   > você achar tiver cenário (uma cama montada num quarto, por exemplo),
+   > escreva **sim** nessa coluna que o site encaixa a imagem preenchendo o
+   > quadro, sem borda estranha.
 
 4. No topo, clique em **Respostas → Vincular a planilha → Criar planilha**.
    Isso cria a planilha que guarda tudo.
@@ -58,10 +73,29 @@ O site puxa os presentes de uma **planilha do Google**, que é preenchida por um
 
 ---
 
+## ⚠️ Se você já tinha publicado o script antes (atualizar o código)
+Ao colar uma **versão nova** do `apps_script_presentes.gs`, o site **só passa a
+usar o código novo depois de republicar**:
+
+1. **Extensões → Apps Script**, cole o novo conteúdo e **Salve**.
+2. **Implantar → Gerenciar implantações**.
+3. Clique no **lápis (editar)** da implantação existente.
+4. Em **Versão**, escolha **Nova versão** e clique **Implantar**.
+
+Assim o **mesmo link** `/exec` continua valendo (não precisa trocar nada no site).
+Se criar uma implantação totalmente nova, o link muda e aí precisa me avisar.
+
 ## Como funciona a reserva
-Quando um convidado escolhe um presente e confirma, o site marca **"Reservado"**
-na planilha e o presente **some da lista para os outros**. Se o convidado cancelar,
-ele **volta** para a lista. Tudo automático.
+Quando um convidado escolhe um presente e confirma, o site confere **na hora com a
+planilha** se ainda há unidade disponível:
+- Item com **quantidade 1** → some da lista assim que alguém reserva.
+- Item com **quantidade maior** (ex: 3) → mostra "3 de 3 disponíveis" e vai
+  baixando; só some quando a **última** unidade é reservada.
+- Se dois convidados tentam pegar a última unidade ao mesmo tempo, **só um
+  consegue** — o outro recebe um aviso e escolhe outro presente (a planilha é a
+  fonte da verdade, não dá pra duplicar).
+
+Se o convidado cancelar, a unidade dele **volta** para a lista. Tudo automático.
 
 ## Dúvidas comuns
 - **A imagem não aparece?** Confirme que a foto foi enviada pelo formulário
