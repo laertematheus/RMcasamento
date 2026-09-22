@@ -25,7 +25,7 @@
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23EF9CD0' d='M12 21s-8-5.3-8-11a4.5 4.5 0 0 1 8-2.9A4.5 4.5 0 0 1 20 10c0 5.7-8 11-8 11z'/%3E%3C/svg%3E">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400;1,500&family=Jost:wght@200;300;400;500;600&display=swap" rel="stylesheet">
 <link href="https://fonts.googleapis.com/css2?family=Pinyon+Script&family=Poppins:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400;1,500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/estilo.css?v=20260922e">
+<link rel="stylesheet" href="css/estilo.css?v=20260922f">
 </head>
 <body>
 <canvas id="canvas"></canvas>
@@ -209,6 +209,7 @@
     <h2 class="gifts-title">Lista de Presentes</h2>
     <p class="gifts-sub">14 · 11 · 2026</p>
     <p class="gifts-msg">Pedimos que envie a compra para a sua residência, assim você poderá nos entregar em mãos no dia.</p>
+    <div class="id-chip"></div>
   </div>
   <div class="grid-wrap">
     <div class="gift-grid" id="giftGrid"></div>
@@ -281,6 +282,33 @@
   </div>
 </div>
 
+<!-- ═══════════ IDENTIDADE (login por família) ═══════════ -->
+<div class="modal-overlay" id="idOverlay">
+  <div class="modal">
+    <button class="modal-close" onclick="closeId()">✕</button>
+    <div class="modal-step active" id="id-step-nome">
+      <span class="modal-eyebrow">Seus presentes em qualquer aparelho</span>
+      <h2 class="modal-title" id="idTitle">Quem é você?</h2>
+      <input class="modal-input" id="idNome" type="text" placeholder="Digite seu primeiro nome" autocomplete="off" onkeydown="if(event.key==='Enter')idBuscar()"/>
+      <p class="modal-error" id="idErro">Nome não encontrado. Tente seu primeiro nome ou fale com os noivos.</p>
+      <button class="modal-btn-primary" id="idBuscar" onclick="idBuscar()">Continuar →</button>
+      <p class="modal-nota">Assim seus presentes, desejos e selos ficam salvos e aparecem no computador ou em outro celular.</p>
+    </div>
+    <div class="modal-step" id="id-step-familia">
+      <span class="modal-eyebrow">Encontramos mais de uma</span>
+      <h2 class="modal-title">Qual é a sua família?</h2>
+      <div class="id-fam-list" id="idFamiliaList"></div>
+    </div>
+    <div class="modal-step" id="id-step-ok">
+      <div class="modal-icon">✓</div>
+      <span class="modal-eyebrow">Tudo certo</span>
+      <h2 class="modal-title" id="idOkTitle">Bem-vindo!</h2>
+      <p class="modal-nota" style="opacity:1;font-size:13px;line-height:1.9;">Agora seus presentes e desejos ficam guardados.<br>Você pode entrar em qualquer aparelho pelo seu nome.</p>
+      <button class="modal-btn-primary" style="margin-top:22px;" onclick="closeId()">Fechar</button>
+    </div>
+  </div>
+</div>
+
 <!-- ═══════════ GIFT CONFIRM MODAL ═══════════ -->
 <div class="modal-overlay" id="giftModalOverlay">
   <div class="modal">
@@ -331,6 +359,6 @@
 
 <script src="js/confetti.min.js?v=20260921i"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/bodymovin/5.12.2/lottie.min.js"></script>
-<script src="js/app.js?v=20260922e"></script>
+<script src="js/app.js?v=20260922f"></script>
 </body>
 </html>

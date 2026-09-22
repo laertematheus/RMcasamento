@@ -37,6 +37,14 @@ const guestToken = (function(){ let t=load('mr_guest',null); if(!t){ t='g'+Math.
 const SERVER_ON = !!PRODUTOS_URL;
 function localMode(){ return !SERVER_ON || usingExamples; }  // reservas ficam locais nesse modo
 
+/* ── IDENTIDADE POR FAMÍLIA ──
+   Se a pessoa se identifica (pelo nome, na lista do RSVP), tudo passa a ser da
+   FAMÍLIA e fica salvo no servidor -> aparece em qualquer aparelho. Sem login,
+   segue anônimo (por aparelho), igual antes. */
+let familia = load('mr_familia', null);         // { id, nome } ou null
+function guestKey(){ return familia ? ('fam'+familia.id) : guestToken; }  // chave usada nas reservas
+function logado(){ return !!familia; }
+
 const $ = s => document.querySelector(s);
 const productById = id => PRODUCTS.find(p => p.id === id);
 
@@ -46,12 +54,12 @@ const productById = id => PRODUCTS.find(p => p.id === id);
    Disponível = quantidade - quantos já reservaram. */
 function qtyTotal(p){ const n = parseInt(String(p.qtd != null ? p.qtd : '1').replace(/\D/g,''),10); return n>0 ? n : 1; }
 function reservedList(p){
-  if (localMode()) return localReserved[p.id] ? [guestToken] : [];
+  if (localMode()) return localReserved[p.id] ? [guestKey()] : [];
   return String(p.reservado || '').split(/[;,]/).map(s=>s.trim()).filter(Boolean);
 }
 function reservedCount(p){ return reservedList(p).length; }
 function available(p){ return Math.max(0, qtyTotal(p) - reservedCount(p)); }
-function isMine(p){ return reservedList(p).indexOf(guestToken) >= 0; }
+function isMine(p){ return reservedList(p).indexOf(guestKey()) >= 0; }
 function isTaken(p){ return !isMine(p) && available(p) <= 0; } // esgotado (para todos)
 function myGift(){ return PRODUCTS.find(p => isMine(p)) || null; }
 function myGifts(){ return PRODUCTS.filter(p => isMine(p)); }
@@ -220,6 +228,7 @@ function toggleLike(id, btn){
   if (i>=0){ wishlist.splice(i,1); btn&&btn.classList.remove('liked'); }
   else { wishlist.push(id); if(btn){ btn.classList.add('liked'); heartBurst(btn); } }
   save('mr_wishlist', wishlist);
+  saveFamiliaState();   // sincroniza os desejos com a família (se estiver logada)
   updateBadges();
   if ($('#drawer').classList.contains('open') && drawerMode==='wishlist') renderDrawer();
 }
@@ -269,6 +278,12 @@ function closeGiftModal(){ $('#giftModalOverlay').classList.remove('open'); pend
 
 async function confirmGift(){
   const id=pendingGift; if(!id) return;
+  // pra o presente ficar salvo na FAMÍLIA (e aparecer em qualquer aparelho), pede o nome antes
+  if(!logado() && !localMode()){
+    $('#giftModalOverlay').classList.remove('open');
+    openId({ title:'Antes, quem é você?', after:()=>{ pendingGift=id; askGiftConfirm(); } });
+    return;
+  }
   const primeiroPresente = !levels['bronze'];   // 1º presente desbloqueia o nível Bronze
   setReservedNow(id, true);                      // 1) reserva OTIMISTA (na hora, sem travar a tela)
   updateBadges(); renderGrid();
@@ -295,11 +310,11 @@ function setReservedNow(id, mine){
   const p=productById(id); if(!p) return;
   if(!localMode()){                                     // modo servidor: mexe só na MINHA presença na lista
     let list = reservedList(p);
-    if(mine){ if(list.indexOf(guestToken)<0) list.push(guestToken); }
-    else    { list = list.filter(t=>t!==guestToken); }
+    if(mine){ if(list.indexOf(guestKey())<0) list.push(guestKey()); }
+    else    { list = list.filter(t=>t!==guestKey()); }
     p.reservado = list.join(',');
   }
-  if(mine) localReserved[id]=guestToken; else delete localReserved[id];  // modo exemplo (1 aparelho)
+  if(mine) localReserved[id]=guestKey(); else delete localReserved[id];  // modo exemplo (1 aparelho)
   save('mr_localReserved', localReserved);
 }
 /* grava a reserva no servidor e devolve a resposta ({ok, reservado, restam}).
@@ -307,12 +322,12 @@ function setReservedNow(id, mine){
    otimista (a trava do servidor ainda protege — o convidado pode tentar de novo). */
 async function reserveWrite(id, acao){
   if (localMode()){
-    if (acao==='reservar') localReserved[id]=guestToken; else delete localReserved[id];
+    if (acao==='reservar') localReserved[id]=guestKey(); else delete localReserved[id];
     save('mr_localReserved', localReserved);
     return { ok:true };
   }
   try{
-    const r = await fetch(PRODUTOS_URL, { method:'POST', body: JSON.stringify({ action:acao, id:id, quem:guestToken }) });
+    const r = await fetch(PRODUTOS_URL, { method:'POST', body: JSON.stringify({ action:acao, id:id, quem:guestKey() }) });
     const data = await r.json().catch(()=>null);
     if (data && typeof data.reservado === 'string'){    // sincroniza o estado real que o servidor devolveu
       const p=productById(id); if(p) p.reservado=data.reservado;
@@ -410,6 +425,7 @@ function resetProgress(){
   ['mr_levels','mr_wishlist','mr_selectedGift','mr_localReserved','mr_takenGifts'].forEach(k=>{ try{ localStorage.removeItem(k); }catch(e){} });
   levels={}; wishlist=[]; localReserved={};
   PRODUCTS.forEach(p=>p.reservado='');
+  saveFamiliaState();   // se logada, zera também no servidor
   closeResetModal(); updateBadges(); renderGrid(); renderProgress();
   go('progresso');
 }
@@ -417,7 +433,7 @@ function resetProgress(){
 function unlockLevel(key){
   const l=LEVELS.find(x=>x.key===key);
   if(!l || l.locked || levels[key]) return;
-  levels[key]=true; save('mr_levels', levels);
+  levels[key]=true; save('mr_levels', levels); saveFamiliaState();
   updateBadges();
   if(location.hash.includes('progresso')) renderProgress();
   celebrateLevel(l);
@@ -520,8 +536,8 @@ async function enviar(confirmacao){
   const tel=$('#inputTel').value.trim();
   try{ await fetch(SCRIPT_URL,{ method:'POST', body:JSON.stringify({row:currentRow,telefone:tel,confirmacao}), headers:{'Content-Type':'application/json'} }); }catch(e){}
 }
-$('#btnSim').addEventListener('click', async ()=>{ const b=$('#btnSim'); b.textContent='Confirmando...'; b.disabled=true; await enviar('✅ Sim'); showStep('step3sim'); });
-$('#btnNao').addEventListener('click', async ()=>{ await enviar('❌ Não'); showStep('step3nao'); });
+$('#btnSim').addEventListener('click', async ()=>{ const b=$('#btnSim'); b.textContent='Confirmando...'; b.disabled=true; await enviar('✅ Sim'); if(currentRow) applyFamilia(currentRow, $('#familiaName').textContent); showStep('step3sim'); });
+$('#btnNao').addEventListener('click', async ()=>{ await enviar('❌ Não'); if(currentRow) applyFamilia(currentRow, $('#familiaName').textContent); showStep('step3nao'); });
 
 /* ════════════════════════════════════════════════════════════
    PARTÍCULAS (bokeh rosa)
@@ -591,10 +607,99 @@ function addCalendar(){
 }
 
 /* ════════════════════════════════════════════════════════════
+   IDENTIDADE POR FAMÍLIA  (login por nome, salva no servidor via RSVP)
+   ════════════════════════════════════════════════════════════ */
+let idAfter = null;  // callback após o login (ex: retomar a reserva)
+function openId(opts){
+  opts = opts || {};
+  idAfter = opts.after || null;
+  const t=$('#idTitle'); if(t) t.textContent = opts.title || 'Quem é você?';
+  idStep('id-step-nome');
+  const err=$('#idErro'); if(err) err.style.display='none';
+  const inp=$('#idNome'); if(inp) inp.value='';
+  $('#idOverlay').classList.add('open');
+  setTimeout(()=>{ const i=$('#idNome'); if(i) i.focus(); }, 300);
+}
+function closeId(){ $('#idOverlay').classList.remove('open'); }
+function idStep(id){ document.querySelectorAll('#idOverlay .modal-step').forEach(s=>s.classList.remove('active')); const el=$('#'+id); if(el) el.classList.add('active'); }
+async function idBuscar(){
+  const nome=$('#idNome').value.trim(); if(!nome) return;
+  const b=$('#idBuscar'), err=$('#idErro'); if(err) err.style.display='none';
+  b.disabled=true; b.textContent='Buscando...';
+  try{
+    const res=await fetch(`${SCRIPT_URL}?nome=${encodeURIComponent(nome)}`);
+    const data=await res.json();
+    const matches = (data.matches && data.matches.length) ? data.matches : (data.found ? [{row:data.row, familia:data.familia}] : []);
+    if(!matches.length){ if(err) err.style.display='block'; }
+    else if(matches.length===1){ await setFamilia(matches[0].row, matches[0].familia); }
+    else { showFamiliaPicker(matches); }
+  }catch(e){ if(err){ err.textContent='Erro de conexão. Tente de novo em instantes.'; err.style.display='block'; } }
+  b.disabled=false; b.textContent='Continuar →';
+}
+function showFamiliaPicker(matches){
+  const esc = s => String(s||'').replace(/'/g,"\\'").replace(/"/g,'&quot;');
+  $('#idFamiliaList').innerHTML = matches.map(m=>{
+    const nome = m.familia || ('Família de '+(m.responsavel||'')) || 'Família';
+    return `<button class="id-fam-btn" onclick="pickFamilia(${m.row}, '${esc(nome)}')">${nome}</button>`;
+  }).join('');
+  idStep('id-step-familia');
+}
+async function pickFamilia(row, nome){ await setFamilia(row, nome); }
+/* aplica a identidade (usado tanto pelo modal quanto pelo RSVP), SEM tocar na UI do modal */
+async function applyFamilia(id, nome){
+  familia = { id:id, nome:nome || 'Família' };
+  save('mr_familia', familia);
+  await loadFamiliaState();          // traz desejos + níveis já salvos
+  updateIdentityUI(); updateBadges(); renderGrid();
+  if(location.hash.includes('progresso')) renderProgress();
+}
+async function setFamilia(id, nome){
+  await applyFamilia(id, nome);
+  if(idAfter){ const cb=idAfter; idAfter=null; closeId(); setTimeout(cb, 250); return; }  // veio de uma reserva: fecha e retoma
+  const okt=$('#idOkTitle'); if(okt) okt.textContent = 'Oi, ' + familia.nome + '!';
+  idStep('id-step-ok');
+}
+let familiaSyncOk = false;   // só sincroniza desejos/níveis se o script NOVO do RSVP responder (senão, não grava — evita apagar o RSVP)
+async function loadFamiliaState(){
+  if(!familia) return;
+  try{
+    const res=await fetch(`${SCRIPT_URL}?acao=estado&row=${encodeURIComponent(familia.id)}`);
+    const d=await res.json();
+    if(d && d.ok){
+      familiaSyncOk = true;   // script novo confirmado -> pode salvar com segurança
+      if(Array.isArray(d.desejos)){ wishlist = d.desejos.slice(); save('mr_wishlist', wishlist); }
+      if(d.niveis && typeof d.niveis==='object'){ levels = Object.assign({}, d.niveis); save('mr_levels', levels); }
+    }
+  }catch(e){ console.warn('estado da família falhou', e); }
+}
+let _saveFamTimer=null;
+function saveFamiliaState(){
+  if(!familia || !familiaSyncOk) return;   // trava: não grava se o script novo não estiver ativo
+  clearTimeout(_saveFamTimer);
+  _saveFamTimer=setTimeout(()=>{
+    fetch(SCRIPT_URL, { method:'POST', body: JSON.stringify({ acao:'salvar', row:familia.id, desejos:wishlist, niveis:levels }) }).catch(()=>{});
+  }, 700);
+}
+function sairFamilia(){
+  familia=null; try{ localStorage.removeItem('mr_familia'); }catch(e){}
+  updateIdentityUI(); updateBadges(); renderGrid();
+  if(location.hash.includes('progresso')) renderProgress();
+}
+function updateIdentityUI(){
+  document.querySelectorAll('.id-chip').forEach(el=>{
+    el.innerHTML = logado()
+      ? `<span class="id-chip-nome">✓ ${familia.nome}</span> <button class="id-chip-link" onclick="sairFamilia()">sair</button>`
+      : `<button class="id-chip-link" onclick="openId()">Entrar / recuperar meus presentes</button>`;
+  });
+}
+
+/* ════════════════════════════════════════════════════════════
    INÍCIO
    ════════════════════════════════════════════════════════════ */
 (async function init(){
   await loadProducts();   // carrega presentes já no começo (lista de desejos e sacola funcionam em qualquer página)
+  if(familia) await loadFamiliaState();   // se já está logada num aparelho, restaura desejos/níveis
+  updateIdentityUI();
   updateBadges();
   await router();
 })();
@@ -625,7 +730,7 @@ function startIntroVideo(ov, v){
   ov.addEventListener('touchstart', onTap, { once:true });
   // SAI ~2s antes do fim do vídeo (pra não cortar antes do ápice)
   let done=false; const finish=()=>{ if(done) return; done=true; endIntro(); };
-  v.addEventListener('timeupdate', ()=>{ if(v.duration && isFinite(v.duration) && v.currentTime >= v.duration - 2) finish(); });
+  v.addEventListener('timeupdate', ()=>{ if(v.duration && isFinite(v.duration) && v.currentTime >= v.duration - 0.3) finish(); });
   v.addEventListener('ended', finish);
   // fallback: fecha mesmo se o vídeo travar (usa a duração quando conhecida, senão 15s)
   let fb=setTimeout(finish, 15000);

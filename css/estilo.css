@@ -772,3 +772,13 @@ body.intro-lock{ overflow:hidden; }
 /* quando o vídeo entra: some o card, aparece o player */
 .intro.playing .intro-card{ opacity:0; transform:translateY(-16px); pointer-events:none; }
 .intro.playing .intro-player{ opacity:1; pointer-events:auto; }
+
+/* ═══════════════════════════════════════════════════════════════
+   REVISÃO 14 — identidade por família (chip + modal)
+   ═══════════════════════════════════════════════════════════════ */
+.id-chip{ margin-top:14px; display:flex; align-items:center; justify-content:center; gap:10px; flex-wrap:wrap; }
+.id-chip-link{ background:none; border:none; cursor:pointer; font-family:var(--font-caps); font-size:11px; letter-spacing:.5px; color:var(--pink-deep); text-decoration:underline; padding:4px 6px; }
+.id-chip-nome{ font-family:var(--font-caps); font-size:11px; letter-spacing:.5px; color:var(--ink); background:#f6b6cd; padding:5px 12px; border-radius:999px; }
+.id-fam-list{ display:flex; flex-direction:column; gap:10px; margin-top:8px; }
+.id-fam-btn{ width:100%; padding:15px 18px; border:1px solid var(--pink-soft); background:var(--pink-pale); border-radius:10px; cursor:pointer; font-size:15px; color:var(--ink); text-align:left; transition:.2s; }
+.id-fam-btn:hover{ border-color:var(--pink-deep); background:#fff; }
