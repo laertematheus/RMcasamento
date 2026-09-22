@@ -325,9 +325,15 @@ async function reserveWrite(id, acao){
    CONFETE ROSA (não muito claro)
    ════════════════════════════════════════════════════════════ */
 let _mc = null; // instância do confete (criada UMA vez — recriar quebra o canvas)
+/* garante que o canvas do confete ocupe a TELA TODA (senão fica 300x150 e o
+   confete amontoa no canto superior esquerdo) */
+function sizeConfetti(){ const cv=$('#confetti-canvas'); if(cv){ cv.width=window.innerWidth; cv.height=window.innerHeight; } }
+window.addEventListener('resize', sizeConfetti);
 function fireConfetti(){
   if(!window.confetti) return;
-  if(!_mc){ try{ _mc = confetti.create($('#confetti-canvas'), { resize:true, useWorker:false }); }catch(e){ _mc=window.confetti; } }
+  const cv=$('#confetti-canvas'); if(!cv) return;
+  sizeConfetti();                                     // dimensiona antes de cada disparo
+  if(!_mc){ try{ _mc = confetti.create(cv, { resize:false, useWorker:false }); }catch(e){ _mc=window.confetti; } }
   const mc = _mc || window.confetti;
   const cores = ['#EF9CD0','#f297b8','#e572b4','#d9569f','#ffffff','#fbe4f2']; // paleta rosa (rosa claro→escuro + branco)
   const fim = Date.now()+1500;
@@ -592,3 +598,22 @@ function addCalendar(){
   updateBadges();
   await router();
 })();
+
+/* ════════════════════════════════════════════════════════════
+   INTRO EM VÍDEO
+   Teste: só dispara com ?intro=1 na URL (convidados normais não veem).
+   Quando aprovado, é só trocar a condição lá embaixo por "1ª visita".
+   ════════════════════════════════════════════════════════════ */
+function startIntro(){
+  const ov=$('#introOverlay'), v=$('#introVideo'); if(!ov||!v) return;
+  ov.classList.add('show');
+  document.body.classList.add('intro-lock');   // trava o scroll enquanto a intro toca
+  v.muted=true; v.play().catch(()=>{});
+  // som no primeiro toque (política do navegador bloqueia autoplay com áudio)
+  ov.addEventListener('pointerdown', ()=>{ v.muted=false; v.volume=0.9; const h=$('#introHint'); if(h) h.style.opacity='0'; }, { once:true });
+  // após 7s: minimiza pro canto e libera o site pra rolar
+  setTimeout(()=>{ ov.classList.add('mini'); document.body.classList.remove('intro-lock'); }, 7000);
+}
+function closeIntroMini(){ const ov=$('#introOverlay'), v=$('#introVideo'); if(!ov) return; ov.classList.remove('show','mini'); document.body.classList.remove('intro-lock'); try{ v.pause(); }catch(e){} }
+// GATILHO (modo teste): só com ?intro=1. Depois trocar por: if(!load('mr_visitou',false)){ save('mr_visitou',true); startIntro(); }
+if (/[?&]intro=1(&|$)/.test(location.search)) startIntro();
