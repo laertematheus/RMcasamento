@@ -16,10 +16,10 @@ const PRODUTOS_URL = 'https://script.google.com/macros/s/AKfycbw47uIHThSgKbcoOyX
    ════════════════════════════════════════════════════════════ */
 // Exemplos de Cama & Banho (aparecem enquanto a planilha estiver vazia — servem para testar o fluxo)
 const PRODUTOS_EXEMPLO = [
-  { id:'e1', nome:'Jogo de toalhas de banho e rosto', preco:'149,90', img:'', loja:'Buddemeyer', link:'https://www.buddemeyer.com.br', spec:'Jogo de toalhas 100% algodão, macias e de alta absorção. (Exemplo para testar — os presentes de verdade virão da planilha.)' },
-  { id:'e2', nome:'Edredom casal dupla face', preco:'189,99', img:'', loja:'Casa Riachuelo', link:'https://www.riachuelo.com.br', spec:'Edredom casal reversível, quentinho e leve. (Exemplo para testar — os presentes de verdade virão da planilha.)' },
-  { id:'e3', nome:'Jogo de lençóis 4 peças 200 fios', preco:'159,90', img:'', loja:'MMartan', link:'https://www.mmartan.com.br', spec:'Jogo de lençóis em algodão 200 fios, toque macio. (Exemplo para testar.)' },
-  { id:'e4', nome:'Kit 2 travesseiros de conforto', preco:'99,90', img:'', loja:'Magalu', link:'https://www.magazineluiza.com.br', spec:'Par de travesseiros com suporte ideal para noites tranquilas. (Exemplo para testar.)' },
+  { id:'e1', nome:'Jogo de toalhas de banho e rosto', preco:'149,90', img:'', loja:'Buddemeyer', link:'https://www.buddemeyer.com.br', qtd:'3', spec:'Jogo de toalhas 100% algodão, macias e de alta absorção. (Exemplo com quantidade 3 — vários convidados podem presentear.)' },
+  { id:'e2', nome:'Edredom casal dupla face', preco:'189,99', img:'', loja:'Casa Riachuelo', link:'https://www.riachuelo.com.br', qtd:'1', spec:'Edredom casal reversível, quentinho e leve. (Exemplo para testar — os presentes de verdade virão da planilha.)' },
+  { id:'e3', nome:'Jogo de lençóis 4 peças 200 fios', preco:'159,90', img:'', loja:'MMartan', link:'https://www.mmartan.com.br', qtd:'2', spec:'Jogo de lençóis em algodão 200 fios, toque macio. (Exemplo com quantidade 2.)' },
+  { id:'e4', nome:'Kit 2 travesseiros de conforto', preco:'99,90', img:'', loja:'Magalu', link:'https://www.magazineluiza.com.br', qtd:'1', spec:'Par de travesseiros com suporte ideal para noites tranquilas. (Exemplo para testar.)' },
 ];
 
 /* ════════════════════════════════════════════════════════════
@@ -40,10 +40,19 @@ function localMode(){ return !SERVER_ON || usingExamples; }  // reservas ficam l
 const $ = s => document.querySelector(s);
 const productById = id => PRODUCTS.find(p => p.id === id);
 
-/* reservado? por quem? */
-function reservedBy(p){ return localMode() ? (localReserved[p.id] || '') : (p.reservado || ''); }
-function isMine(p){ return reservedBy(p) === guestToken; }
-function isTaken(p){ const r = reservedBy(p); return r && r !== guestToken; }
+/* ── quantidade + reservas (um item pode ter várias unidades) ──
+   Cada item tem uma QUANTIDADE (padrão 1). O campo "reservado" guarda a
+   lista de convidados que já pegaram uma unidade (tokens separados por vírgula).
+   Disponível = quantidade - quantos já reservaram. */
+function qtyTotal(p){ const n = parseInt(String(p.qtd != null ? p.qtd : '1').replace(/\D/g,''),10); return n>0 ? n : 1; }
+function reservedList(p){
+  if (localMode()) return localReserved[p.id] ? [guestToken] : [];
+  return String(p.reservado || '').split(/[;,]/).map(s=>s.trim()).filter(Boolean);
+}
+function reservedCount(p){ return reservedList(p).length; }
+function available(p){ return Math.max(0, qtyTotal(p) - reservedCount(p)); }
+function isMine(p){ return reservedList(p).indexOf(guestToken) >= 0; }
+function isTaken(p){ return !isMine(p) && available(p) <= 0; } // esgotado (para todos)
 function myGift(){ return PRODUCTS.find(p => isMine(p)) || null; }
 function myGifts(){ return PRODUCTS.filter(p => isMine(p)); }
 
@@ -69,8 +78,11 @@ async function loadProducts(){
       preco: p.preco || '',
       img: p.img || p.imagem || '',
       spec: p.spec || p.descricao || '',
+      qtd: (p.qtd != null ? p.qtd : (p.quantidade != null ? p.quantidade : '1')),
+      fundo: p.fundo || '',
       reservado: p.reservado || ''
     }));
+    save('mr_products_cache', PRODUCTS); // guarda p/ abrir instantâneo na próxima visita
   } catch(e){
     console.warn('Falha ao buscar presentes, usando exemplos.', e);
     PRODUCTS = PRODUTOS_EXEMPLO.map(p=>({...p})); usingExamples=true;
@@ -81,7 +93,14 @@ async function loadProducts(){
    HELPERS DE HTML
    ════════════════════════════════════════════════════════════ */
 function phSVG(){ return '<div class="gift-ph"><svg viewBox="0 0 24 24" fill="none"><path d="M20 12v9H4v-9M2 7h20v5H2V7zM12 22V7M12 7S9 2 6.5 2 4 5 4 5s1 2 4 2M12 7s3-5 5.5-5S20 5 20 5s-1 2-4 2" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/></svg><span>foto em breve</span></div>'; }
-function mediaHTML(p){ return p.img ? `<img src="${p.img}" alt="${p.nome}" loading="lazy" onerror="this.parentNode.innerHTML='${phSVG().replace(/'/g,"\\'")}'">` : phSVG(); }
+/* PADRÃO: a imagem já tem fundo/cenário (foto de catálogo) e PREENCHE o quadro (cover).
+   Só vira "recortada" (centralizada, com respiro) se a coluna Fundo disser explicitamente
+   que é PNG sem fundo — ex: "recortado", "png", "sem fundo", "transparente", "nao". */
+function isCut(p){ const f=String((p&&p.fundo)||'').trim().toLowerCase(); return /recort|transparen|png|sem\s*fundo|^n(a|ã)o$|^n$/.test(f); }
+/* se a foto falhar, troca pelo placeholder — via função (não dá pra injetar o
+   HTML do placeholder dentro do atributo onerror: ele tem aspas duplas e quebra a tag) */
+function imgFail(el){ try{ el.parentNode.innerHTML = phSVG(); }catch(e){} }
+function mediaHTML(p){ return p.img ? `<img class="${isCut(p)?'is-cut':''}" src="${p.img}" alt="${(p.nome||'').replace(/"/g,'&quot;')}" loading="lazy" onerror="imgFail(this)">` : phSVG(); }
 function heartSVG(){ return `<svg viewBox="0 0 24 24"><path class="houtline" d="M12 21s-8-5.3-8-11a4.5 4.5 0 0 1 8-2.9A4.5 4.5 0 0 1 20 10c0 5.7-8 11-8 11z"/></svg>`; }
 
 /* ════════════════════════════════════════════════════════════
@@ -110,7 +129,14 @@ window.addEventListener('hashchange', router);
 
 async function ensureProductsAndRenderGrid(){
   const grid = $('#giftGrid');
-  grid.innerHTML = `<p style="grid-column:1/-1;text-align:center;color:var(--ink-faint);padding:60px 0;font-family:'Cormorant Garamond',serif;font-style:italic;font-size:20px;">carregando presentes…</p>`;
+  // 1) pinta na hora com o cache (ou o que já estiver em memória), sem tela de "carregando"
+  if (!PRODUCTS.length){
+    const cache = load('mr_products_cache', null);
+    if (cache && cache.length){ PRODUCTS = cache.map(p=>({...p})); usingExamples=false; }
+  }
+  if (PRODUCTS.length){ renderGrid(); updateBadges(); }
+  else grid.innerHTML = `<p style="grid-column:1/-1;text-align:center;color:var(--ink-faint);padding:60px 0;font-family:'Cormorant Garamond',serif;font-style:italic;font-size:20px;">carregando presentes…</p>`;
+  // 2) busca a versão fresca em segundo plano e atualiza
   await loadProducts();
   renderGrid();
   updateBadges();
@@ -125,9 +151,13 @@ function renderGrid(){
   grid.innerHTML = PRODUCTS.map(p=>{
     const liked = wishlist.includes(p.id);
     const mine = isMine(p), taken = isTaken(p);
+    const total = qtyTotal(p), livre = available(p);
     let flag = '';
-    if (mine)  flag = `<div class="gift-reserved-flag"><span class="rf-ico"></span><span class="rf-txt">Você escolheu</span><span class="rf-sub">está na sua sacola</span></div>`;
-    else if (taken) flag = `<div class="gift-reserved-flag"><span class="rf-ico">🎀</span><span class="rf-txt">Já reservado</span><span class="rf-sub">por outro convidado</span></div>`;
+    if (mine)  flag = `<div class="gift-reserved-flag"><span class="rf-ico"></span><span class="rf-txt">Você escolheu</span><span class="rf-sub">${total>1 && livre>0 ? 'ainda há '+livre+' na lista' : 'está na sua sacola'}</span></div>`;
+    else if (taken) flag = `<div class="gift-reserved-flag"><span class="rf-ico">🎀</span><span class="rf-txt">Esgotado</span><span class="rf-sub">já escolhido pelos convidados</span></div>`;
+    // faixa de disponibilidade só quando há mais de uma unidade
+    const stock = (total>1 && livre>0 && !mine)
+      ? `<span class="gift-stock">${livre} de ${total} disponíveis</span>` : '';
     return `<article class="gift-card" data-id="${p.id}" onclick="openProduct('${p.id}')">
       <div class="gift-media">
         ${mediaHTML(p)}
@@ -138,6 +168,7 @@ function renderGrid(){
         <p class="gift-name">${p.nome}</p>
         <p class="gift-price">${money(p.preco)}</p>
         <p class="gift-store">${p.loja}</p>
+        ${stock}
       </div>
     </article>`;
   }).join('');
@@ -162,13 +193,14 @@ function renderProduct(id){
         <h1 class="prod-name">${p.nome}</h1>
         <p class="prod-price">${money(p.preco)}</p>
         <p class="prod-price-note">valor de referência · pode variar por loja</p>
+        ${ qtyTotal(p)>1 && !mine ? `<p class="prod-stock ${available(p)>0?'':'out'}">${ available(p)>0 ? `Ainda há <b>${available(p)} de ${qtyTotal(p)}</b> disponíveis — mais de um convidado pode presentear` : 'Todas as unidades já foram escolhidas' }</p>` : '' }
         ${p.spec?`<p class="prod-spec-lbl">Especificação</p><p class="prod-spec">${p.spec}</p>`:''}
         ${p.loja?`<div class="prod-store-chip"><span class="dot"></span> Sugestão: ${p.loja}</div>`:''}
         ${ mine
           ? `<div class="prod-tip" style="background:var(--pink-pale);border:1px solid var(--pink-soft);"><b>Este é o presente que você escolheu</b><br>Ele está guardado na sua sacola.</div>
              <button class="prod-cancel" onclick="cancelGift('${p.id}')">Cancelar presente</button>`
           : taken
-          ? `<div class="prod-tip"><b>Presente já reservado</b> por outro convidado.<br>Que tal escolher outro?</div>`
+          ? `<div class="prod-tip"><b>Presente esgotado</b> — já foi escolhido pelos convidados.<br>Que tal escolher outro?</div>`
           : `${ !levels['bronze'] ? `<div class="prod-incentivo"><img class="pi-selo" src="selo_bronze.png" alt="Selo Bronze"><div>Escolha este presente e <b>ganhe o selo de Bronze</b></div></div>` : '' }
              <a class="prod-buy" href="${p.link}" target="_blank" rel="noopener" onclick="markPending('${p.id}')">
                <svg viewBox="0 0 24 24" fill="none"><path d="M6 8h12l-1 12H7L6 8z" stroke="#fff" stroke-width="1.6" stroke-linejoin="round"/><path d="M9 8V6a3 3 0 0 1 6 0v2" stroke="#fff" stroke-width="1.6" stroke-linecap="round"/></svg>
@@ -235,38 +267,58 @@ function askGiftConfirm(){
 function showGiftStep(id){ document.querySelectorAll('#giftModalOverlay .modal-step').forEach(s=>s.classList.remove('active')); $('#'+id).classList.add('active'); }
 function closeGiftModal(){ $('#giftModalOverlay').classList.remove('open'); pendingGift=null; }
 
-function confirmGift(){
+async function confirmGift(){
   const id=pendingGift; if(!id) return;
   const primeiroPresente = !levels['bronze'];   // 1º presente desbloqueia o nível Bronze
-  setReservedNow(id, guestToken);               // reserva na hora
-  reserveWrite(id, 'reservar');                 // sincroniza servidor em segundo plano
-  pendingGift=null;
+  setReservedNow(id, true);                      // 1) reserva OTIMISTA (na hora, sem travar a tela)
   updateBadges(); renderGrid();
+  const res = await reserveWrite(id, 'reservar');// 2) confirma no servidor (fonte da verdade)
+  if (res && res.ok === false){                  // 3) servidor recusou (item esgotou entre a tela e o clique)
+    setReservedNow(id, false);                   //    -> DESFAZ a reserva otimista
+    updateBadges(); renderGrid();
+    pendingGift=null;
+    showGiftStep('gstep-taken');                 //    -> avisa o convidado
+    return;
+  }
+  pendingGift=null;
   if (primeiroPresente){ closeGiftModal(); unlockLevel('bronze'); }  // celebração de nível
   else { showGiftStep('gstep-done'); fireConfetti(); }
 }
 function cancelGift(id){
-  setReservedNow(id, '');            // remove na hora (sem esperar a planilha)
-  reserveWrite(id, 'cancelar');      // sincroniza servidor em segundo plano
+  setReservedNow(id, false);         // remove na hora (sem esperar a planilha)
+  reserveWrite(id, 'cancelar');      // sincroniza servidor em segundo plano (liberar é de baixo risco)
   updateBadges(); renderGrid(); renderDrawer();
   if (location.hash.includes('produto/')) renderProduct(id);
 }
-/* atualização OTIMISTA (na hora) — some o delay de esperar a planilha */
-function setReservedNow(id, val){
-  const p=productById(id); if(p) p.reservado=val;                       // modo servidor
-  if(val) localReserved[id]=guestToken; else delete localReserved[id];  // modo exemplo
+/* atualização OTIMISTA (na hora) — mine=true reserva uma unidade PARA MIM; false cancela a minha */
+function setReservedNow(id, mine){
+  const p=productById(id); if(!p) return;
+  if(!localMode()){                                     // modo servidor: mexe só na MINHA presença na lista
+    let list = reservedList(p);
+    if(mine){ if(list.indexOf(guestToken)<0) list.push(guestToken); }
+    else    { list = list.filter(t=>t!==guestToken); }
+    p.reservado = list.join(',');
+  }
+  if(mine) localReserved[id]=guestToken; else delete localReserved[id];  // modo exemplo (1 aparelho)
   save('mr_localReserved', localReserved);
 }
-/* grava reserva no servidor (ou local, no modo exemplo) */
+/* grava a reserva no servidor e devolve a resposta ({ok, reservado, restam}).
+   No modo exemplo (planilha vazia) resolve local. Se a rede cair, mantém o
+   otimista (a trava do servidor ainda protege — o convidado pode tentar de novo). */
 async function reserveWrite(id, acao){
   if (localMode()){
     if (acao==='reservar') localReserved[id]=guestToken; else delete localReserved[id];
     save('mr_localReserved', localReserved);
-    return;
+    return { ok:true };
   }
   try{
-    await fetch(PRODUTOS_URL, { method:'POST', body: JSON.stringify({ action:acao, id:id, quem:guestToken }) });
-  }catch(e){ console.warn('Falha ao gravar reserva', e); }
+    const r = await fetch(PRODUTOS_URL, { method:'POST', body: JSON.stringify({ action:acao, id:id, quem:guestToken }) });
+    const data = await r.json().catch(()=>null);
+    if (data && typeof data.reservado === 'string'){    // sincroniza o estado real que o servidor devolveu
+      const p=productById(id); if(p) p.reservado=data.reservado;
+    }
+    return data || { ok:true };
+  }catch(e){ console.warn('Falha ao gravar reserva', e); return { ok:true, offline:true }; }
 }
 
 /* ════════════════════════════════════════════════════════════
