@@ -608,6 +608,11 @@ function startIntro(){
   const ov=$('#introOverlay'), v=$('#introVideo'); if(!ov||!v) return;
   ov.classList.add('show');
   document.body.classList.add('intro-lock');   // trava o scroll enquanto a intro toca
+  // FASE A: card de texto sozinho (~2.8s) — depois entra o vídeo
+  setTimeout(()=>startIntroVideo(ov, v), 2800);
+}
+function startIntroVideo(ov, v){
+  ov.classList.add('playing');                 // some o card, aparece o vídeo
   // atributos que o mobile exige para tocar inline sem bloquear
   v.muted=true; v.setAttribute('muted',''); v.setAttribute('playsinline',''); v.setAttribute('webkit-playsinline','');
   v.loop=false;                               // não repete; sai sozinho perto do fim
