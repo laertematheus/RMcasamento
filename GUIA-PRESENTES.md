@@ -19,8 +19,13 @@ O site puxa os presentes de uma **planilha do Google**, que é preenchida por um
    | **Preço** | Resposta curta *(ex: 279,90 — só o número)* |
    | **Quantidade** | Resposta curta *(quantas unidades desse item, ex: 1, 2, 4)* |
    | **Foto do presente** | **Envio de arquivo** (permitir imagens, 1 arquivo) |
-   | **Fundo?** *(opcional)* | Resposta curta *(escreva **sim** se a foto já tem cenário/fundo; deixe vazio se for PNG recortado)* |
    | **Descrição** *(opcional)* | Parágrafo |
+
+   > A coluna **Fundo** é **opcional** e, do jeito que vocês estão fazendo (todas
+   > as fotos já vêm com cenário/fundo), **não precisa dela** — o site já encaixa
+   > a foto preenchendo o quadro. Só crie/preencha essa coluna com algo como
+   > `recortado` se um dia usar uma imagem PNG sem fundo e quiser que ela apareça
+   > centralizada, com respiro.
 
    > A pergunta de **Foto** precisa ser do tipo **"Envio de arquivo"**. O Google
    > vai pedir para você ativar isso — é normal. Quem responder precisa estar
@@ -32,12 +37,6 @@ O site puxa os presentes de uma **planilha do Google**, que é preenchida por um
    > some da lista quando a última unidade for reservada. Para um kit único
    > (ex: jogo com 4 peças por R$200), coloque **1**. Se deixar em branco, o
    > site entende como **1**.
-
-   > **Fundo?:** a maioria das lojas tem foto do produto recortado (fundo
-   > transparente PNG) — nesses, deixe em branco. Quando a única foto boa que
-   > você achar tiver cenário (uma cama montada num quarto, por exemplo),
-   > escreva **sim** nessa coluna que o site encaixa a imagem preenchendo o
-   > quadro, sem borda estranha.
 
 4. No topo, clique em **Respostas → Vincular a planilha → Criar planilha**.
    Isso cria a planilha que guarda tudo.

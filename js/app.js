@@ -82,6 +82,7 @@ async function loadProducts(){
       fundo: p.fundo || '',
       reservado: p.reservado || ''
     }));
+    save('mr_products_cache', PRODUCTS); // guarda p/ abrir instantâneo na próxima visita
   } catch(e){
     console.warn('Falha ao buscar presentes, usando exemplos.', e);
     PRODUCTS = PRODUTOS_EXEMPLO.map(p=>({...p})); usingExamples=true;
@@ -92,10 +93,11 @@ async function loadProducts(){
    HELPERS DE HTML
    ════════════════════════════════════════════════════════════ */
 function phSVG(){ return '<div class="gift-ph"><svg viewBox="0 0 24 24" fill="none"><path d="M20 12v9H4v-9M2 7h20v5H2V7zM12 22V7M12 7S9 2 6.5 2 4 5 4 5s1 2 4 2M12 7s3-5 5.5-5S20 5 20 5s-1 2-4 2" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/></svg><span>foto em breve</span></div>'; }
-/* fundo="sim"/"com fundo" => a imagem já tem cenário próprio (foto de catálogo):
-   preenche o quadro (cover). Vazio => PNG recortado, fica centralizado (contain). */
-function hasBg(p){ return !!(p && p.fundo && String(p.fundo).trim() && !/^(n|nao|não|no|0)$/i.test(String(p.fundo).trim())); }
-function mediaHTML(p){ return p.img ? `<img class="${hasBg(p)?'has-bg':''}" src="${p.img}" alt="${p.nome}" loading="lazy" onerror="this.parentNode.innerHTML='${phSVG().replace(/'/g,"\\'")}'">` : phSVG(); }
+/* PADRÃO: a imagem já tem fundo/cenário (foto de catálogo) e PREENCHE o quadro (cover).
+   Só vira "recortada" (centralizada, com respiro) se a coluna Fundo disser explicitamente
+   que é PNG sem fundo — ex: "recortado", "png", "sem fundo", "transparente", "nao". */
+function isCut(p){ const f=String((p&&p.fundo)||'').trim().toLowerCase(); return /recort|transparen|png|sem\s*fundo|^n(a|ã)o$|^n$/.test(f); }
+function mediaHTML(p){ return p.img ? `<img class="${isCut(p)?'is-cut':''}" src="${p.img}" alt="${p.nome}" loading="lazy" onerror="this.parentNode.innerHTML='${phSVG().replace(/'/g,"\\'")}'">` : phSVG(); }
 function heartSVG(){ return `<svg viewBox="0 0 24 24"><path class="houtline" d="M12 21s-8-5.3-8-11a4.5 4.5 0 0 1 8-2.9A4.5 4.5 0 0 1 20 10c0 5.7-8 11-8 11z"/></svg>`; }
 
 /* ════════════════════════════════════════════════════════════
@@ -124,7 +126,14 @@ window.addEventListener('hashchange', router);
 
 async function ensureProductsAndRenderGrid(){
   const grid = $('#giftGrid');
-  grid.innerHTML = `<p style="grid-column:1/-1;text-align:center;color:var(--ink-faint);padding:60px 0;font-family:'Cormorant Garamond',serif;font-style:italic;font-size:20px;">carregando presentes…</p>`;
+  // 1) pinta na hora com o cache (ou o que já estiver em memória), sem tela de "carregando"
+  if (!PRODUCTS.length){
+    const cache = load('mr_products_cache', null);
+    if (cache && cache.length){ PRODUCTS = cache.map(p=>({...p})); usingExamples=false; }
+  }
+  if (PRODUCTS.length){ renderGrid(); updateBadges(); }
+  else grid.innerHTML = `<p style="grid-column:1/-1;text-align:center;color:var(--ink-faint);padding:60px 0;font-family:'Cormorant Garamond',serif;font-style:italic;font-size:20px;">carregando presentes…</p>`;
+  // 2) busca a versão fresca em segundo plano e atualiza
   await loadProducts();
   renderGrid();
   updateBadges();

@@ -66,15 +66,28 @@ function driveId_(url) {
   return m ? m[0] : '';
 }
 
-/* Transforma o link do Drive numa URL de imagem que o site consegue mostrar */
+/* Transforma o link do Drive numa URL de imagem que o site consegue mostrar.
+   Usa a CDN do Google (lh3.googleusercontent.com), bem mais confiável em <img>
+   do que o antigo drive.google.com/thumbnail (que o Google costuma bloquear). */
 function imgUrl_(cell) {
-  var id = driveId_(cell);
-  if (!id) return String(cell || ''); // se já for um link normal de imagem, usa direto
+  var raw = String(cell || '').trim();
+  if (!raw) return '';
+  var id = driveId_(raw);
+  if (!id) return raw; // já é uma URL direta OU um nome de arquivo hospedado no próprio site
+  garantePublico_(id); // libera a visualização — só na 1ª vez (cacheado)
+  return 'https://lh3.googleusercontent.com/d/' + id + '=w1080';
+}
+
+/* Libera a foto para "qualquer pessoa com o link" APENAS quando necessário e
+   guarda em cache por 6h. Assim o site para de chamar o Drive a cada carregamento
+   (era exatamente isso que deixava a lista lenta, ~10s). */
+function garantePublico_(id) {
   try {
-    var file = DriveApp.getFileById(id);
-    file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+    var cache = CacheService.getScriptCache();
+    if (cache.get('pub_' + id)) return;            // já liberado há pouco -> não mexe no Drive
+    DriveApp.getFileById(id).setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+    cache.put('pub_' + id, '1', 21600);            // 6 horas
   } catch (err) {}
-  return 'https://drive.google.com/thumbnail?id=' + id + '&sz=w1000';
 }
 
 function getProdutos_() {

@@ -711,3 +711,12 @@ button.prog-status.todo:hover{ transform:translateX(2px); background:#000; }
 .gift-media img.has-bg,
 .prod-media img.has-bg,
 .wl-thumb img.has-bg{ object-fit:cover; padding:0; }
+
+/* ═══════════════════════════════════════════════════════════════
+   REVISÃO 9 — imagens preenchem o quadro por padrão (fotos com fundo)
+   A noiva passou a usar só fotos com cenário (não recortadas), então o
+   padrão agora é COVER. Item recortado (raro) recebe .is-cut e fica contain.
+   ═══════════════════════════════════════════════════════════════ */
+.gift-media img, .prod-media img, .wl-thumb img{ object-fit:cover; padding:0; }
+.gift-media img.is-cut{ object-fit:contain; padding:9%; }
+.prod-media img.is-cut{ object-fit:contain; padding:6%; }
