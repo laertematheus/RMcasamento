@@ -608,9 +608,15 @@ function startIntro(){
   const ov=$('#introOverlay'), v=$('#introVideo'); if(!ov||!v) return;
   ov.classList.add('show');
   document.body.classList.add('intro-lock');   // trava o scroll enquanto a intro toca
-  v.muted=true; v.play().catch(()=>{});
-  // som no primeiro toque (política do navegador bloqueia autoplay com áudio)
-  ov.addEventListener('pointerdown', ()=>{ v.muted=false; v.volume=0.9; const h=$('#introHint'); if(h) h.style.opacity='0'; }, { once:true });
+  // atributos que o mobile exige para tocar inline sem bloquear
+  v.muted=true; v.setAttribute('muted',''); v.setAttribute('playsinline',''); v.setAttribute('webkit-playsinline','');
+  const tryPlay=()=>{ const p=v.play(); if(p&&p.catch) p.catch(()=>{}); };
+  tryPlay();
+  v.addEventListener('canplay', tryPlay, { once:true });
+  // primeiro toque: liga o som E garante o play (no mobile o autoplay mudo às vezes não começa)
+  const onTap=()=>{ v.muted=false; v.volume=0.9; tryPlay(); const h=$('#introHint'); if(h) h.style.opacity='0'; };
+  ov.addEventListener('click', onTap, { once:true });
+  ov.addEventListener('touchstart', onTap, { once:true });
   // após 7s: minimiza pro canto e libera o site pra rolar
   setTimeout(()=>{ ov.classList.add('mini'); document.body.classList.remove('intro-lock'); }, 7000);
 }
