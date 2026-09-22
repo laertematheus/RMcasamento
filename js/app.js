@@ -97,7 +97,10 @@ function phSVG(){ return '<div class="gift-ph"><svg viewBox="0 0 24 24" fill="no
    Só vira "recortada" (centralizada, com respiro) se a coluna Fundo disser explicitamente
    que é PNG sem fundo — ex: "recortado", "png", "sem fundo", "transparente", "nao". */
 function isCut(p){ const f=String((p&&p.fundo)||'').trim().toLowerCase(); return /recort|transparen|png|sem\s*fundo|^n(a|ã)o$|^n$/.test(f); }
-function mediaHTML(p){ return p.img ? `<img class="${isCut(p)?'is-cut':''}" src="${p.img}" alt="${p.nome}" loading="lazy" onerror="this.parentNode.innerHTML='${phSVG().replace(/'/g,"\\'")}'">` : phSVG(); }
+/* se a foto falhar, troca pelo placeholder — via função (não dá pra injetar o
+   HTML do placeholder dentro do atributo onerror: ele tem aspas duplas e quebra a tag) */
+function imgFail(el){ try{ el.parentNode.innerHTML = phSVG(); }catch(e){} }
+function mediaHTML(p){ return p.img ? `<img class="${isCut(p)?'is-cut':''}" src="${p.img}" alt="${(p.nome||'').replace(/"/g,'&quot;')}" loading="lazy" onerror="imgFail(this)">` : phSVG(); }
 function heartSVG(){ return `<svg viewBox="0 0 24 24"><path class="houtline" d="M12 21s-8-5.3-8-11a4.5 4.5 0 0 1 8-2.9A4.5 4.5 0 0 1 20 10c0 5.7-8 11-8 11z"/></svg>`; }
 
 /* ════════════════════════════════════════════════════════════
