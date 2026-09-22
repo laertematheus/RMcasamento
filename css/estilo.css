@@ -15,7 +15,7 @@
   --pink-deep: #d9569f;   /* rosa mais forte — contraste / confete */
 }
 
-html { scroll-behavior: smooth; }
+html { scroll-behavior: smooth; overflow-x: hidden; width: 100%; }
 body {
   background: var(--white);
   color: var(--ink);
@@ -750,3 +750,15 @@ body.intro-lock{ overflow:hidden; }
 .intro.mini .intro-stage{ inset:auto 14px 14px auto; width:118px; height:206px; gap:0; pointer-events:auto; }
 .intro.mini .intro-video{ width:118px; height:206px; max-height:none; border-radius:14px; box-shadow:0 12px 30px rgba(0,0,0,.35); }
 .intro.mini .intro-mini-close{ display:flex; position:absolute; top:-11px; right:-11px; width:27px; height:27px; border-radius:50%; background:#fff; border:none; align-items:center; justify-content:center; cursor:pointer; box-shadow:0 3px 10px rgba(0,0,0,.3); font-size:13px; color:#333; z-index:2; }
+
+/* ═══════════════════════════════════════════════════════════════
+   REVISÃO 12 — intro (linha "há 4 anos"), DESBLOQUEADO = rosa do cabeçalho
+   ═══════════════════════════════════════════════════════════════ */
+/* fecha a intro com fade suave */
+.intro{ transition:opacity .5s ease; }
+
+/* eyebrow "há 4 anos atrás…" acima da pergunta na intro */
+.intro-eyebrow{ font-family:var(--font-caps); color:rgba(255,255,255,.7); font-size:11px; letter-spacing:4px; text-transform:uppercase; }
+
+/* pílula "DESBLOQUEADO" no mesmo rosa (mais claro) do cabeçalho */
+.prog-status.done{ background:#f6b6cd; color:var(--ink); }

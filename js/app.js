@@ -610,6 +610,7 @@ function startIntro(){
   document.body.classList.add('intro-lock');   // trava o scroll enquanto a intro toca
   // atributos que o mobile exige para tocar inline sem bloquear
   v.muted=true; v.setAttribute('muted',''); v.setAttribute('playsinline',''); v.setAttribute('webkit-playsinline','');
+  v.loop=false;                               // não repete; sai sozinho perto do fim
   const tryPlay=()=>{ const p=v.play(); if(p&&p.catch) p.catch(()=>{}); };
   tryPlay();
   v.addEventListener('canplay', tryPlay, { once:true });
@@ -617,9 +618,19 @@ function startIntro(){
   const onTap=()=>{ v.muted=false; v.volume=0.9; tryPlay(); const h=$('#introHint'); if(h) h.style.opacity='0'; };
   ov.addEventListener('click', onTap, { once:true });
   ov.addEventListener('touchstart', onTap, { once:true });
-  // após 7s: minimiza pro canto e libera o site pra rolar
-  setTimeout(()=>{ ov.classList.add('mini'); document.body.classList.remove('intro-lock'); }, 7000);
+  // SAI ~2s antes do fim do vídeo (pra não cortar antes do ápice)
+  let done=false; const finish=()=>{ if(done) return; done=true; endIntro(); };
+  v.addEventListener('timeupdate', ()=>{ if(v.duration && isFinite(v.duration) && v.currentTime >= v.duration - 2) finish(); });
+  v.addEventListener('ended', finish);
+  // fallback: fecha mesmo se o vídeo travar (usa a duração quando conhecida, senão 15s)
+  let fb=setTimeout(finish, 15000);
+  v.addEventListener('loadedmetadata', ()=>{ if(v.duration && isFinite(v.duration)){ clearTimeout(fb); fb=setTimeout(finish, (v.duration + 3)*1000); } });
 }
-function closeIntroMini(){ const ov=$('#introOverlay'), v=$('#introVideo'); if(!ov) return; ov.classList.remove('show','mini'); document.body.classList.remove('intro-lock'); try{ v.pause(); }catch(e){} }
+function endIntro(){
+  const ov=$('#introOverlay'), v=$('#introVideo'); if(!ov) return;
+  document.body.classList.remove('intro-lock');
+  ov.style.transition='opacity .5s ease'; ov.style.opacity='0';   // fade suave
+  setTimeout(()=>{ ov.classList.remove('show'); ov.style.opacity=''; ov.style.transition=''; try{ v.pause(); }catch(e){} }, 500);
+}
 // GATILHO (modo teste): só com ?intro=1. Depois trocar por: if(!load('mr_visitou',false)){ save('mr_visitou',true); startIntro(); }
 if (/[?&]intro=1(&|$)/.test(location.search)) startIntro();
