@@ -201,7 +201,7 @@ function renderProduct(id){
              <button class="prod-cancel" onclick="cancelGift('${p.id}')">Cancelar presente</button>`
           : taken
           ? `<div class="prod-tip"><b>Presente esgotado</b> — já foi escolhido pelos convidados.<br>Que tal escolher outro?</div>`
-          : `${ !levels['bronze'] ? `<div class="prod-incentivo"><img class="pi-selo" src="selo_bronze.png" alt="Selo Bronze"><div>Escolha este presente e <b>ganhe o selo de Bronze</b></div></div>` : '' }
+          : `${ !levels['bronze'] ? `<div class="prod-incentivo"><img class="pi-selo" src="selo_bronze.png?v=2" alt="Selo Bronze"><div>Escolha este presente e <b>ganhe o selo de Bronze</b></div></div>` : '' }
              <a class="prod-buy" href="${p.link}" target="_blank" rel="noopener" onclick="markPending('${p.id}')">
                <svg viewBox="0 0 24 24" fill="none"><path d="M6 8h12l-1 12H7L6 8z" stroke="#fff" stroke-width="1.6" stroke-linejoin="round"/><path d="M9 8V6a3 3 0 0 1 6 0v2" stroke="#fff" stroke-width="1.6" stroke-linecap="round"/></svg>
                Comprar na loja
@@ -348,11 +348,11 @@ function fireConfetti(){
    PROGRESSO — selos de cera (Ferro→Diamante)
    ════════════════════════════════════════════════════════════ */
 const LEVELS = [
-  { key:'ferro',    nome:'Ferro',    img:'selo_ferro.png',    desc:'Adicionou lembrete no calendário',      locked:false },
-  { key:'bronze',   nome:'Bronze',   img:'selo_bronze.png',   desc:'Reservou um presente de cama e banho',  locked:false },
-  { key:'prata',    nome:'Prata',    img:'selo_prata.png',    desc:'Confirmou presença no casamento',       locked:true, soon:'em breve' },
-  { key:'ouro',     nome:'Ouro',     img:'selo_ouro.png',     desc:'Adicionou o lembrete do casamento',     locked:true, soon:'em breve' },
-  { key:'diamante', nome:'Diamante', img:'selo_diamante.png', desc:'Reservou um presente de casamento',     locked:true, soon:'em breve' },
+  { key:'ferro',    nome:'Ferro',    img:'selo_ferro.png?v=2',    desc:'Adicionou lembrete no calendário',      locked:false },
+  { key:'bronze',   nome:'Bronze',   img:'selo_bronze.png?v=2',   desc:'Reservou um presente de cama e banho',  locked:false },
+  { key:'prata',    nome:'Prata',    img:'selo_prata.png?v=2',    desc:'Confirmou presença no casamento',       locked:true, soon:'em breve' },
+  { key:'ouro',     nome:'Ouro',     img:'selo_ouro.png?v=2',     desc:'Adicionou o lembrete do casamento',     locked:true, soon:'em breve' },
+  { key:'diamante', nome:'Diamante', img:'selo_diamante.png?v=2', desc:'Reservou um presente de casamento',     locked:true, soon:'em breve' },
 ];
 /* selo do nível = imagem enviada pelos noivos (fundo transparente) */
 function badgeHTML(l, size){ return `<img class="badge-img" src="${l.img}" alt="Selo ${l.nome}" style="width:${size}px;height:${size}px">`; }
