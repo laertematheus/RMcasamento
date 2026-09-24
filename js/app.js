@@ -118,7 +118,8 @@ function heartSVG(){ return `<svg viewBox="0 0 24 24"><path class="houtline" d="
 /* ════════════════════════════════════════════════════════════
    ROTEADOR (menu / páginas)
    ════════════════════════════════════════════════════════════ */
-function go(route){ location.hash = route ? '#/'+route : '#/'; if(window.innerWidth<=780) closeMenu(); window.scrollTo(0,0); }
+function scrollTopo(){ try{ window.scrollTo(0,0); document.documentElement.scrollTop=0; document.body.scrollTop=0; }catch(e){} }
+function go(route){ location.hash = route ? '#/'+route : '#/'; if(window.innerWidth<=780) closeMenu(); scrollTopo(); }
 function showView(name){
   document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
   $('#view-'+name).classList.add('active');
@@ -132,10 +133,10 @@ function showView(name){
 }
 async function router(){
   const h = location.hash.replace(/^#\/?/, '');
-  if (h.startsWith('produto/')) { showView('produto'); if(!PRODUCTS.length) await loadProducts(); renderProduct(h.split('/')[1]); }
-  else if (h === 'presentes') { showView('presentes'); await ensureProductsAndRenderGrid(); }
-  else if (h === 'progresso') { showView('progresso'); if(!PRODUCTS.length) await loadProducts(); renderProgress(); }
-  else { showView('home'); }
+  if (h.startsWith('produto/')) { showView('produto'); if(!PRODUCTS.length) await loadProducts(); renderProduct(h.split('/')[1]); scrollTopo(); }
+  else if (h === 'presentes') { showView('presentes'); scrollTopo(); await ensureProductsAndRenderGrid(); }
+  else if (h === 'progresso') { showView('progresso'); if(!PRODUCTS.length) await loadProducts(); renderProgress(); scrollTopo(); }
+  else { showView('home'); scrollTopo(); }
 }
 window.addEventListener('hashchange', router);
 
