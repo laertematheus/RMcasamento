@@ -794,3 +794,12 @@ body.intro-lock{ overflow:hidden; }
 .gp-track{ height:12px; background:#e9e4e7; border-radius:999px; overflow:hidden; }
 .gp-fill{ height:100%; background:#111; border-radius:999px; transition:width .6s cubic-bezier(.2,.7,.2,1); }
 .gp-ends{ display:flex; justify-content:space-between; margin-top:6px; font-family:var(--font-caps); font-size:10.5px; color:var(--ink-3); }
+
+/* ═══════════════════════════════════════════════════════════════
+   REVISÃO 16 — "Já reservados": divisória na lista + cards esgotados esmaecidos
+   ═══════════════════════════════════════════════════════════════ */
+.gift-divider{ grid-column:1/-1; text-align:center; margin:34px 0 8px; padding-top:26px; border-top:1px solid var(--line); }
+.gift-divider span{ display:block; font-family:var(--font-display); font-size:clamp(20px,4vw,26px); color:var(--ink); }
+.gift-divider small{ display:block; font-family:var(--font-caps); font-size:11px; letter-spacing:1px; text-transform:uppercase; color:var(--pink-deep); margin-top:6px; }
+.gift-card.is-taken{ opacity:.62; filter:saturate(.55); }
+.gift-card.is-taken:hover{ opacity:.82; }

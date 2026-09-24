@@ -83,10 +83,10 @@ function imgUrl_(cell) {
    (era exatamente isso que deixava a lista lenta, ~10s). */
 function garantePublico_(id) {
   try {
-    var cache = CacheService.getScriptCache();
-    if (cache.get('pub_' + id)) return;            // já liberado há pouco -> não mexe no Drive
+    var props = PropertiesService.getScriptProperties();
+    if (props.getProperty('pub_' + id)) return;    // já liberado uma vez -> nunca mais mexe no Drive
     DriveApp.getFileById(id).setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
-    cache.put('pub_' + id, '1', 21600);            // 6 horas
+    props.setProperty('pub_' + id, '1');           // marca permanente
   } catch (err) {}
 }
 

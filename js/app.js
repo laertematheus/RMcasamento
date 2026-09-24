@@ -177,22 +177,17 @@ function renderGiftProgress(){
     <div class="gp-track"><div class="gp-fill" style="width:${pct}%"></div></div>
     <div class="gp-ends"><span>0</span><span>${total}</span></div>`;
 }
-function renderGrid(){
-  const grid = $('#giftGrid');
-  renderGiftProgress();
-  if (!PRODUCTS.length){ grid.innerHTML = `<p style="grid-column:1/-1;text-align:center;color:var(--ink-faint);padding:60px 0;">A lista de presentes chega em breve</p>`; return; }
-  const ordenados = [...PRODUCTS].sort((a,b)=>priceNum(b)-priceNum(a)); // padrão: mais caros primeiro
-  grid.innerHTML = ordenados.map(p=>{
-    const liked = wishlist.includes(p.id);
-    const mine = isMine(p), taken = isTaken(p);
-    const total = qtyTotal(p), livre = available(p);
-    let flag = '';
-    if (mine)  flag = `<div class="gift-reserved-flag"><span class="rf-ico"></span><span class="rf-txt">Você escolheu</span><span class="rf-sub">${total>1 && livre>0 ? 'ainda há '+livre+' na lista' : 'está na sua sacola'}</span></div>`;
-    else if (taken) flag = `<div class="gift-reserved-flag"><span class="rf-ico">🎀</span><span class="rf-txt">Esgotado</span><span class="rf-sub">já escolhido pelos convidados</span></div>`;
-    // faixa de disponibilidade só quando há mais de uma unidade
-    const stock = (total>1 && livre>0 && !mine)
-      ? `<span class="gift-stock">${livre} de ${total} disponíveis</span>` : '';
-    return `<article class="gift-card" data-id="${p.id}" onclick="openProduct('${p.id}')">
+/* card de um presente (usado nos dois grupos: disponíveis e já reservados) */
+function giftCardHTML(p){
+  const liked = wishlist.includes(p.id);
+  const mine = isMine(p), taken = isTaken(p);
+  const total = qtyTotal(p), livre = available(p);
+  let flag = '';
+  if (mine)  flag = `<div class="gift-reserved-flag"><span class="rf-ico"></span><span class="rf-txt">Você escolheu</span><span class="rf-sub">${total>1 && livre>0 ? 'ainda há '+livre+' na lista' : 'está na sua sacola'}</span></div>`;
+  else if (taken) flag = `<div class="gift-reserved-flag"><span class="rf-ico">🎀</span><span class="rf-txt">Esgotado</span><span class="rf-sub">já escolhido pelos convidados</span></div>`;
+  const stock = (total>1 && livre>0 && !mine)
+    ? `<span class="gift-stock">${livre} de ${total} disponíveis</span>` : '';
+  return `<article class="gift-card ${taken?'is-taken':''}" data-id="${p.id}" onclick="openProduct('${p.id}')">
       <div class="gift-media">
         ${mediaHTML(p)}
         <button class="gift-like ${liked?'liked':''}" onclick="event.stopPropagation();toggleLike('${p.id}',this)" aria-label="Curtir">${heartSVG()}</button>
@@ -205,7 +200,20 @@ function renderGrid(){
         ${stock}
       </div>
     </article>`;
-  }).join('');
+}
+function renderGrid(){
+  const grid = $('#giftGrid');
+  renderGiftProgress();
+  if (!PRODUCTS.length){ grid.innerHTML = `<p style="grid-column:1/-1;text-align:center;color:var(--ink-faint);padding:60px 0;">A lista de presentes chega em breve</p>`; return; }
+  const byPrice = (a,b)=>priceNum(b)-priceNum(a);           // mais caros primeiro
+  const disp = PRODUCTS.filter(p=>!isTaken(p)).sort(byPrice); // disponíveis + os que você escolheu
+  const esg  = PRODUCTS.filter(p=> isTaken(p)).sort(byPrice); // esgotados (pela galera)
+  let html = disp.map(giftCardHTML).join('');
+  if (esg.length){
+    html += `<div class="gift-divider"><span>Já reservados</span><small>${esg.length} presente${esg.length>1?'s':''} que a galera já escolheu</small></div>`;
+    html += esg.map(giftCardHTML).join('');
+  }
+  grid.innerHTML = html;
 }
 
 /* ════════════════════════════════════════════════════════════
@@ -651,14 +659,16 @@ async function idBuscar(){
   if(!raw) return;
   if(err) err.style.display='none';
   b.disabled=true; b.textContent='Entrando...';
+  const ctrl = new AbortController(); const to = setTimeout(()=>ctrl.abort(), 9000);  // não trava: aborta em 9s
   try{
-    const res=await fetch(`${PRODUTOS_URL}?acao=identificar&nome=${encodeURIComponent(raw)}&aba=${encodeURIComponent(ABA_CONVIDADOS)}`);
+    const res=await fetch(`${PRODUTOS_URL}?acao=identificar&nome=${encodeURIComponent(raw)}&aba=${encodeURIComponent(ABA_CONVIDADOS)}`, { signal: ctrl.signal });
     const d=await res.json();
     const matches = (d && d.matches) ? d.matches : [];
     if(!matches.length){ if(err){ err.textContent='Não encontramos seu nome na lista. Confira ou fale com os noivos.'; err.style.display='block'; } }
     else if(matches.length===1){ await setFamilia(matches[0].row, matches[0].familia); }
     else { showFamiliaPicker(matches); }
-  }catch(e){ if(err){ err.textContent='Erro de conexão. Tente de novo em instantes.'; err.style.display='block'; } }
+  }catch(e){ if(err){ err.textContent = (e && e.name==='AbortError') ? 'Está demorando demais. Verifique se o script foi republicado e tente de novo.' : 'Erro de conexão. Tente de novo em instantes.'; err.style.display='block'; } }
+  finally { clearTimeout(to); }
   b.disabled=false; b.textContent='Continuar →';
 }
 function showFamiliaPicker(matches){
