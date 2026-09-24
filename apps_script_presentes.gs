@@ -121,40 +121,57 @@ function json_(obj) {
   return ContentService.createTextOutput(JSON.stringify(obj)).setMimeType(ContentService.MimeType.JSON);
 }
 
-/* ═══════════ CONVIDADOS (auto-cadastro por nome + sobrenome) ═══════════
-   Guarda, por pessoa, os desejos e os níveis. A aba "Convidados" é criada
-   sozinha. Colunas: A Nome | B Chave(normalizada) | C Desejos | D Niveis */
+/* ═══════════ CONVIDADOS (identidade por familia, aba "Convidados") ═══════════
+   Estrutura da aba: A Nome | B Apelidos(virgula) | C Familia | D..F | G Desejos | H Niveis
+   O convidado digita o nome; achamos a familia dele. Desejos/niveis ficam na
+   1a linha daquela familia (compartilhado por todos os membros). */
+var CV = { nome:0, apelidos:1, familia:2, desejos:6, niveis:7 };  // 0-based (Desejos=G, Niveis=H)
 function parseArr_(v){ try{ var a=JSON.parse(v); return Array.isArray(a)?a:[]; }catch(e){ return String(v||'').split(',').map(function(s){return s.trim();}).filter(String); } }
 function parseObj_(v){ try{ var o=JSON.parse(v); return (o&&typeof o==='object')?o:{}; }catch(e){ return {}; } }
-function normNome_(s){ return String(s||'').toLowerCase().trim().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/\s+/g,' '); }
-function convSheet_(){
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
-  var sh = ss.getSheetByName('Convidados');
-  if(!sh){ sh = ss.insertSheet('Convidados'); sh.appendRow(['Nome','Chave','Desejos','Niveis']); }
-  return sh;
+var _DIAC = new RegExp('[\\u0300-\\u036f]','g');   // remove acentos (ASCII-safe, sem caractere invisivel)
+function normNome_(s){ return String(s||'').toLowerCase().trim().normalize('NFD').replace(_DIAC,'').replace(/\s+/g,' '); }
+function convSheet_(){ return SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Convidados'); }
+/* 1a linha (canonica) de uma familia — pra todos os membros compartilharem o mesmo estado */
+function linhaCanonica_(vals, fam){
+  for(var i=1;i<vals.length;i++){ if(String(vals[i][CV.familia])===fam) return i+1; }
+  return -1;
 }
+/* busca o nome (em Nome OU Apelidos) e devolve as familias que batem */
 function identificar_(nome){
-  var chave = normNome_(nome);
-  if(!chave) return { ok:false };
-  var lock = LockService.getScriptLock();
-  try { lock.waitLock(10000); } catch(err) {}
-  try {
-    var sh = convSheet_();
-    var vals = sh.getDataRange().getValues();
-    for(var i=1;i<vals.length;i++){
-      if(String(vals[i][1]) === chave){
-        return { ok:true, id:i+1, nome:String(vals[i][0]||nome), desejos:parseArr_(vals[i][2]), niveis:parseObj_(vals[i][3]), novo:false };
+  var sh = convSheet_();
+  if(!sh) return { found:false, matches:[] };
+  var tokens = normNome_(nome).split(' ').filter(String);
+  if(!tokens.length) return { found:false, matches:[] };
+  var vals = sh.getDataRange().getValues();
+  var matches = [], vistos = {};
+  for(var i=1;i<vals.length;i++){
+    var todos = [normNome_(vals[i][CV.nome])].concat(String(vals[i][CV.apelidos]||'').split(',').map(normNome_)).filter(String);
+    var bate = false;
+    for(var t=0;t<tokens.length;t++){ if(todos.indexOf(tokens[t])>=0){ bate=true; break; } }
+    if(bate){
+      var fam = String(vals[i][CV.familia]||('linha '+(i+1)));
+      if(!vistos[fam]){
+        vistos[fam]=true;
+        var canon = linhaCanonica_(vals, String(vals[i][CV.familia])); if(canon<2) canon=i+1;
+        matches.push({ row:canon, familia:fam });
       }
     }
-    sh.appendRow([nome, chave, '[]', '{}']);   // cadastra na hora
-    return { ok:true, id:sh.getLastRow(), nome:nome, desejos:[], niveis:{}, novo:true };
-  } finally { try{ lock.releaseLock(); }catch(e){} }
+  }
+  return { found:matches.length>0, matches:matches };
+}
+/* estado (desejos/niveis) de uma familia, pela linha canonica */
+function estadoConvidado_(row){
+  var sh = convSheet_(); if(!sh) return { ok:false };
+  var r = Number(row); if(r<2) return { ok:false };
+  var v = sh.getRange(r,1,1,8).getValues()[0];
+  return { ok:true, familia:String(v[CV.familia]||''), desejos:parseArr_(v[CV.desejos]), niveis:parseObj_(v[CV.niveis]) };
 }
 
 /* ─────────── SITE PEDE A LISTA / IDENTIFICA CONVIDADO ─────────── */
 function doGet(e) {
   try {
     if (e && e.parameter && e.parameter.acao === 'identificar') return json_(identificar_(e.parameter.nome));
+    if (e && e.parameter && e.parameter.acao === 'estado')      return json_(estadoConvidado_(e.parameter.row));
     return json_(getProdutos_());
   } catch (err) {
     return json_({ erro: String(err) });
@@ -172,9 +189,9 @@ function doPost(e) {
     if (body.acao === 'salvarConvidado') {
       var csh = convSheet_();
       var crow = Number(body.id);
-      if (crow >= 2) {
-        if (body.desejos != null) csh.getRange(crow, 3).setValue(JSON.stringify(body.desejos));
-        if (body.niveis  != null) csh.getRange(crow, 4).setValue(JSON.stringify(body.niveis));
+      if (csh && crow >= 2) {
+        if (body.desejos != null) csh.getRange(crow, CV.desejos+1).setValue(JSON.stringify(body.desejos));
+        if (body.niveis  != null) csh.getRange(crow, CV.niveis+1).setValue(JSON.stringify(body.niveis));
       }
       return json_({ ok:true });
     }
