@@ -645,21 +645,24 @@ async function idBuscar(){
   const raw = ($('#idNome').value||'').trim().replace(/\s+/g,' ');
   const err=$('#idErro'), b=$('#idBuscar');
   if(!raw) return;
-  if(raw.split(' ').length < 2){                 // só o primeiro nome -> pede sobrenome
-    if(err){ err.textContent='Digite também o seu sobrenome (nome e sobrenome).'; err.style.display='block'; }
-    const i=$('#idNome'); if(i) i.focus();
-    return;
-  }
   if(err) err.style.display='none';
   b.disabled=true; b.textContent='Entrando...';
   try{
     const res=await fetch(`${PRODUTOS_URL}?acao=identificar&nome=${encodeURIComponent(raw)}`);
     const d=await res.json();
-    if(d && d.ok){ familiaSyncOk=true; applyState_(d); await setFamilia(d.id, d.nome || raw); }
-    else { if(err){ err.textContent='Não consegui te registrar agora. Tente de novo em instantes.'; err.style.display='block'; } }
+    const matches = (d && d.matches) ? d.matches : [];
+    if(!matches.length){ if(err){ err.textContent='Não encontramos seu nome na lista. Confira ou fale com os noivos.'; err.style.display='block'; } }
+    else if(matches.length===1){ await setFamilia(matches[0].row, matches[0].familia); }
+    else { showFamiliaPicker(matches); }
   }catch(e){ if(err){ err.textContent='Erro de conexão. Tente de novo em instantes.'; err.style.display='block'; } }
   b.disabled=false; b.textContent='Continuar →';
 }
+function showFamiliaPicker(matches){
+  const esc = s => String(s||'').replace(/'/g,"\\'").replace(/"/g,'&quot;');
+  $('#idFamiliaList').innerHTML = matches.map(m=>`<button class="id-fam-btn" onclick="pickFamilia(${m.row}, '${esc(m.familia)}')">${m.familia||'Família'}</button>`).join('');
+  idStep('id-step-familia');
+}
+async function pickFamilia(row, nome){ await setFamilia(row, nome); }
 function applyState_(d){
   if(Array.isArray(d.desejos)){ wishlist = d.desejos.slice(); save('mr_wishlist', wishlist); }
   if(d.niveis && typeof d.niveis==='object'){ levels = Object.assign({}, d.niveis); save('mr_levels', levels); }
@@ -673,16 +676,18 @@ function applyFamilia(id, nome){
 }
 async function setFamilia(id, nome){
   applyFamilia(id, nome);
+  await loadFamiliaState();       // traz desejos/níveis dessa família
+  updateBadges(); renderGrid();
   if(idAfter){ const cb=idAfter; idAfter=null; closeId(); setTimeout(cb, 250); return; }  // veio de uma reserva: fecha e retoma
-  const okt=$('#idOkTitle'); if(okt) okt.textContent = 'Oi, ' + (familia.nome||'') + '!';
+  const okt=$('#idOkTitle'); if(okt) okt.textContent = 'Tudo certo!';
   idStep('id-step-ok');
 }
-async function loadFamiliaState(){        // ao reabrir num aparelho já logado: reidentifica e traz o estado
-  if(!familia || !familia.nome) return;
+async function loadFamiliaState(){        // traz desejos/níveis pela linha da família
+  if(!familia || !familia.id) return;
   try{
-    const res=await fetch(`${PRODUTOS_URL}?acao=identificar&nome=${encodeURIComponent(familia.nome)}`);
+    const res=await fetch(`${PRODUTOS_URL}?acao=estado&row=${encodeURIComponent(familia.id)}`);
     const d=await res.json();
-    if(d && d.ok){ familiaSyncOk=true; familia.id=d.id; save('mr_familia', familia); applyState_(d); }
+    if(d && d.ok){ familiaSyncOk=true; applyState_(d); }
   }catch(e){ console.warn('estado do convidado falhou', e); }
 }
 let _saveFamTimer=null;
