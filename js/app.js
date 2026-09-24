@@ -153,10 +153,31 @@ async function ensureProductsAndRenderGrid(){
 /* ════════════════════════════════════════════════════════════
    GRADE DE PRESENTES
    ════════════════════════════════════════════════════════════ */
+/* preço como número (aceita 279,90 / 36.9 / 1.234,56) — para ordenar */
+function priceNum(p){
+  let s = String((p&&p.preco)||'').replace(/[^\d.,]/g,'');
+  if (s.indexOf(',')>=0 && s.indexOf('.')>=0) s = s.replace(/\./g,'').replace(',','.'); // 1.234,56
+  else if (s.indexOf(',')>=0) s = s.replace(',','.');                                    // 279,90
+  const n = parseFloat(s); return isNaN(n) ? 0 : n;
+}
+/* barra de progresso: quantos presentes já esgotaram */
+function renderGiftProgress(){
+  const el = $('#giftProgress'); if(!el) return;
+  const total = PRODUCTS.length;
+  const esgotados = PRODUCTS.filter(p=>available(p)<=0).length;
+  const pct = total ? Math.round(esgotados/total*100) : 0;
+  if(!total){ el.innerHTML=''; return; }
+  el.innerHTML = `
+    <div class="gp-top"><span class="gp-count">${esgotados} de ${total} presentes já escolhidos</span><span class="gp-pct">${pct}%</span></div>
+    <div class="gp-track"><div class="gp-fill" style="width:${pct}%"></div></div>
+    <div class="gp-ends"><span>0</span><span>${total}</span></div>`;
+}
 function renderGrid(){
   const grid = $('#giftGrid');
+  renderGiftProgress();
   if (!PRODUCTS.length){ grid.innerHTML = `<p style="grid-column:1/-1;text-align:center;color:var(--ink-faint);padding:60px 0;">A lista de presentes chega em breve</p>`; return; }
-  grid.innerHTML = PRODUCTS.map(p=>{
+  const ordenados = [...PRODUCTS].sort((a,b)=>priceNum(b)-priceNum(a)); // padrão: mais caros primeiro
+  grid.innerHTML = ordenados.map(p=>{
     const liked = wishlist.includes(p.id);
     const mine = isMine(p), taken = isTaken(p);
     const total = qtyTotal(p), livre = available(p);
