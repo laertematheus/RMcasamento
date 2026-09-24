@@ -311,23 +311,32 @@ function askGiftConfirm(){
 function showGiftStep(id){ document.querySelectorAll('#giftModalOverlay .modal-step').forEach(s=>s.classList.remove('active')); $('#'+id).classList.add('active'); }
 function closeGiftModal(){ $('#giftModalOverlay').classList.remove('open'); pendingGift=null; }
 
-async function confirmGift(){
+function confirmGift(){
   const id=pendingGift; if(!id) return;
-  // (login é OPCIONAL: a reserva funciona anônima; se estiver logada, fica salva na família)
-  const primeiroPresente = !levels['bronze'];   // 1º presente desbloqueia o nível Bronze
-  setReservedNow(id, true);                      // 1) reserva OTIMISTA (na hora, sem travar a tela)
-  updateBadges(); renderGrid();
-  const res = await reserveWrite(id, 'reservar');// 2) confirma no servidor (fonte da verdade)
-  if (res && res.ok === false){                  // 3) servidor recusou (item esgotou entre a tela e o clique)
-    setReservedNow(id, false);                   //    -> DESFAZ a reserva otimista
-    updateBadges(); renderGrid();
-    pendingGift=null;
-    showGiftStep('gstep-taken');                 //    -> avisa o convidado
+  // pede o nome (pra salvar o presente na FAMÍLIA), mas com opção de PULAR — nunca trava
+  if(!logado() && !localMode()){
+    $('#giftModalOverlay').classList.remove('open');
+    openId({ title:'Antes, quem é você?', after:()=>confirmGiftNow(id), skip:()=>confirmGiftNow(id) });
     return;
   }
+  confirmGiftNow(id);
+}
+function confirmGiftNow(id){
+  const primeiroPresente = !levels['bronze'];   // 1º presente desbloqueia o nível Bronze
+  setReservedNow(id, true);                      // reserva OTIMISTA
+  updateBadges(); renderGrid();
   pendingGift=null;
-  if (primeiroPresente){ closeGiftModal(); unlockLevel('bronze'); }  // celebração de nível
+  // FEEDBACK IMEDIATO (não espera o servidor — experiência rápida)
+  if (primeiroPresente){ closeGiftModal(); unlockLevel('bronze'); }
   else { showGiftStep('gstep-done'); fireConfetti(); }
+  // sincroniza em segundo plano; se (raro) já tiver esgotado, reverte e avisa depois
+  reserveWrite(id, 'reservar').then(res=>{
+    if (res && res.ok === false){
+      setReservedNow(id, false); updateBadges(); renderGrid();
+      if(location.hash.includes('produto/')) renderProduct(id);
+      $('#giftModalOverlay').classList.add('open'); showGiftStep('gstep-taken');
+    }
+  }).catch(()=>{});
 }
 function cancelGift(id){
   setReservedNow(id, false);         // remove na hora (sem esperar a planilha)
@@ -641,17 +650,21 @@ function addCalendar(){
    A pessoa digita nome e sobrenome. Se não existe, cria; se existe, recupera.
    ════════════════════════════════════════════════════════════ */
 let idAfter = null;  // callback após o login (ex: retomar a reserva)
+let idSkip = null;   // callback se a pessoa optar por PULAR (ex: reservar sem entrar)
 let familiaSyncOk = false;
 function openId(opts){
   opts = opts || {};
   idAfter = opts.after || null;
+  idSkip  = opts.skip  || null;
   const t=$('#idTitle'); if(t) t.textContent = opts.title || 'Quem é você?';
   idStep('id-step-nome');
   const err=$('#idErro'); if(err) err.style.display='none';
   const inp=$('#idNome'); if(inp) inp.value='';
+  const pular=$('#idPular'); if(pular) pular.style.display = idSkip ? 'block' : 'none';  // "pular" só quando faz sentido
   $('#idOverlay').classList.add('open');
   setTimeout(()=>{ const i=$('#idNome'); if(i) i.focus(); }, 300);
 }
+function pularId(){ const cb=idSkip; idSkip=null; idAfter=null; closeId(); if(cb) setTimeout(cb, 150); }
 function closeId(){ $('#idOverlay').classList.remove('open'); }
 function idStep(id){ document.querySelectorAll('#idOverlay .modal-step').forEach(s=>s.classList.remove('active')); const el=$('#'+id); if(el) el.classList.add('active'); }
 async function idBuscar(){
