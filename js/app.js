@@ -11,6 +11,10 @@ const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxk-OrRRvee1H2rgXB0U
 // Apps Script dos PRESENTES (planilha do formulário):
 const PRODUTOS_URL = 'https://script.google.com/macros/s/AKfycbw47uIHThSgKbcoOyXUYWXruGTIquVkDWgjWmw_0i160Mi-3SB-hxhs-KmKEizKUMk72Q/exec';
 
+// Aba de convidados ATIVA. Fase 1 (civil) = lista do dia 14/11.
+// >>> Quando a FESTA (Fase 2) abrir, troque só esta linha para 'Convidados 02/05/27'. <<<
+const ABA_CONVIDADOS = 'Convidados 14/11/26';
+
 /* ════════════════════════════════════════════════════════════
    PRESENTES DE EXEMPLO (aparecem só enquanto PRODUTOS_URL está vazio)
    ════════════════════════════════════════════════════════════ */
@@ -648,7 +652,7 @@ async function idBuscar(){
   if(err) err.style.display='none';
   b.disabled=true; b.textContent='Entrando...';
   try{
-    const res=await fetch(`${PRODUTOS_URL}?acao=identificar&nome=${encodeURIComponent(raw)}`);
+    const res=await fetch(`${PRODUTOS_URL}?acao=identificar&nome=${encodeURIComponent(raw)}&aba=${encodeURIComponent(ABA_CONVIDADOS)}`);
     const d=await res.json();
     const matches = (d && d.matches) ? d.matches : [];
     if(!matches.length){ if(err){ err.textContent='Não encontramos seu nome na lista. Confira ou fale com os noivos.'; err.style.display='block'; } }
@@ -685,7 +689,7 @@ async function setFamilia(id, nome){
 async function loadFamiliaState(){        // traz desejos/níveis pela linha da família
   if(!familia || !familia.id) return;
   try{
-    const res=await fetch(`${PRODUTOS_URL}?acao=estado&row=${encodeURIComponent(familia.id)}`);
+    const res=await fetch(`${PRODUTOS_URL}?acao=estado&row=${encodeURIComponent(familia.id)}&aba=${encodeURIComponent(ABA_CONVIDADOS)}`);
     const d=await res.json();
     if(d && d.ok){ familiaSyncOk=true; applyState_(d); }
   }catch(e){ console.warn('estado do convidado falhou', e); }
@@ -695,7 +699,7 @@ function saveFamiliaState(){
   if(!familia || !familiaSyncOk) return;
   clearTimeout(_saveFamTimer);
   _saveFamTimer=setTimeout(()=>{
-    fetch(PRODUTOS_URL, { method:'POST', body: JSON.stringify({ acao:'salvarConvidado', id:familia.id, desejos:wishlist, niveis:levels }) }).catch(()=>{});
+    fetch(PRODUTOS_URL, { method:'POST', body: JSON.stringify({ acao:'salvarConvidado', id:familia.id, aba:ABA_CONVIDADOS, desejos:wishlist, niveis:levels }) }).catch(()=>{});
   }, 700);
 }
 function sairFamilia(){

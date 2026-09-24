@@ -130,15 +130,18 @@ function parseArr_(v){ try{ var a=JSON.parse(v); return Array.isArray(a)?a:[]; }
 function parseObj_(v){ try{ var o=JSON.parse(v); return (o&&typeof o==='object')?o:{}; }catch(e){ return {}; } }
 var _DIAC = new RegExp('[\\u0300-\\u036f]','g');   // remove acentos (ASCII-safe, sem caractere invisivel)
 function normNome_(s){ return String(s||'').toLowerCase().trim().normalize('NFD').replace(_DIAC,'').replace(/\s+/g,' '); }
-function convSheet_(){ return SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Convidados'); }
+function convSheet_(aba){
+  var nome = (aba && String(aba).indexOf('Convidados') === 0) ? String(aba) : 'Convidados';  // só abas "Convidados*"
+  return SpreadsheetApp.getActiveSpreadsheet().getSheetByName(nome);
+}
 /* 1a linha (canonica) de uma familia — pra todos os membros compartilharem o mesmo estado */
 function linhaCanonica_(vals, fam){
   for(var i=1;i<vals.length;i++){ if(String(vals[i][CV.familia])===fam) return i+1; }
   return -1;
 }
 /* busca o nome (em Nome OU Apelidos) e devolve as familias que batem */
-function identificar_(nome){
-  var sh = convSheet_();
+function identificar_(nome, aba){
+  var sh = convSheet_(aba);
   if(!sh) return { found:false, matches:[] };
   var tokens = normNome_(nome).split(' ').filter(String);
   if(!tokens.length) return { found:false, matches:[] };
@@ -160,8 +163,8 @@ function identificar_(nome){
   return { found:matches.length>0, matches:matches };
 }
 /* estado (desejos/niveis) de uma familia, pela linha canonica */
-function estadoConvidado_(row){
-  var sh = convSheet_(); if(!sh) return { ok:false };
+function estadoConvidado_(row, aba){
+  var sh = convSheet_(aba); if(!sh) return { ok:false };
   var r = Number(row); if(r<2) return { ok:false };
   var v = sh.getRange(r,1,1,8).getValues()[0];
   return { ok:true, familia:String(v[CV.familia]||''), desejos:parseArr_(v[CV.desejos]), niveis:parseObj_(v[CV.niveis]) };
@@ -170,8 +173,8 @@ function estadoConvidado_(row){
 /* ─────────── SITE PEDE A LISTA / IDENTIFICA CONVIDADO ─────────── */
 function doGet(e) {
   try {
-    if (e && e.parameter && e.parameter.acao === 'identificar') return json_(identificar_(e.parameter.nome));
-    if (e && e.parameter && e.parameter.acao === 'estado')      return json_(estadoConvidado_(e.parameter.row));
+    if (e && e.parameter && e.parameter.acao === 'identificar') return json_(identificar_(e.parameter.nome, e.parameter.aba));
+    if (e && e.parameter && e.parameter.acao === 'estado')      return json_(estadoConvidado_(e.parameter.row, e.parameter.aba));
     return json_(getProdutos_());
   } catch (err) {
     return json_({ erro: String(err) });
@@ -187,7 +190,7 @@ function doPost(e) {
 
     // salvar desejos/níveis de um convidado (aba Convidados)
     if (body.acao === 'salvarConvidado') {
-      var csh = convSheet_();
+      var csh = convSheet_(body.aba);
       var crow = Number(body.id);
       if (csh && crow >= 2) {
         if (body.desejos != null) csh.getRange(crow, CV.desejos+1).setValue(JSON.stringify(body.desejos));
