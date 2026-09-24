@@ -163,12 +163,13 @@ function priceNum(p){
 /* barra de progresso: quantos presentes já esgotaram */
 function renderGiftProgress(){
   const el = $('#giftProgress'); if(!el) return;
-  const total = PRODUCTS.length;
-  const esgotados = PRODUCTS.filter(p=>available(p)<=0).length;
-  const pct = total ? Math.round(esgotados/total*100) : 0;
+  // conta por UNIDADE (26 itens = 32 presentes, alguns com 2)
+  const total = PRODUCTS.reduce((s,p)=>s+qtyTotal(p),0);
+  const reservados = PRODUCTS.reduce((s,p)=>s+Math.min(reservedCount(p), qtyTotal(p)),0);
+  const pct = total ? Math.round(reservados/total*100) : 0;
   if(!total){ el.innerHTML=''; return; }
   el.innerHTML = `
-    <div class="gp-top"><span class="gp-count">${esgotados} de ${total} presentes já escolhidos</span><span class="gp-pct">${pct}%</span></div>
+    <div class="gp-top"><span class="gp-count">${reservados} de ${total} presentes já escolhidos</span><span class="gp-pct">${pct}%</span></div>
     <div class="gp-track"><div class="gp-fill" style="width:${pct}%"></div></div>
     <div class="gp-ends"><span>0</span><span>${total}</span></div>`;
 }
