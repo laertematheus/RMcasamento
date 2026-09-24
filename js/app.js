@@ -300,12 +300,7 @@ function closeGiftModal(){ $('#giftModalOverlay').classList.remove('open'); pend
 
 async function confirmGift(){
   const id=pendingGift; if(!id) return;
-  // pra o presente ficar salvo na FAMÍLIA (e aparecer em qualquer aparelho), pede o nome antes
-  if(!logado() && !localMode()){
-    $('#giftModalOverlay').classList.remove('open');
-    openId({ title:'Antes, quem é você?', after:()=>{ pendingGift=id; askGiftConfirm(); } });
-    return;
-  }
+  // (login é OPCIONAL: a reserva funciona anônima; se estiver logada, fica salva na família)
   const primeiroPresente = !levels['bronze'];   // 1º presente desbloqueia o nível Bronze
   setReservedNow(id, true);                      // 1) reserva OTIMISTA (na hora, sem travar a tela)
   updateBadges(); renderGrid();
