@@ -321,8 +321,9 @@ function closeGiftModal(){ $('#giftModalOverlay').classList.remove('open'); pend
 
 function confirmGift(){
   const id=pendingGift; if(!id) return;
-  // pede o nome (pra salvar na FAMÍLIA) só se ainda não perguntamos nesta sessão; com opção de PULAR
-  if(!logado() && !localMode() && !askedIdentity){
+  // ao reservar, se ainda NÃO está identificada, pede o nome (é o momento que importa saber quem deu).
+  // tem "Reservar sem entrar" pra nunca travar.
+  if(!logado() && !localMode()){
     $('#giftModalOverlay').classList.remove('open');
     openId({ title:'Antes, quem é você?', skipText:'Reservar sem entrar', after:()=>confirmGiftNow(id), skip:()=>confirmGiftNow(id) });
     return;
@@ -690,7 +691,7 @@ async function idBuscar(){
   if(!raw) return;
   if(err) err.style.display='none';
   b.disabled=true; b.textContent='Entrando...';
-  const ctrl = new AbortController(); const to = setTimeout(()=>ctrl.abort(), 9000);  // não trava: aborta em 9s
+  const ctrl = new AbortController(); const to = setTimeout(()=>ctrl.abort(), 15000);  // não trava: aborta em 15s (Apps Script no cold start é lento)
   try{
     const res=await fetch(`${PRODUTOS_URL}?acao=identificar&nome=${encodeURIComponent(raw)}&aba=${encodeURIComponent(ABA_CONVIDADOS)}`, { signal: ctrl.signal });
     const d=await res.json();
@@ -759,11 +760,11 @@ function updateIdentityUI(){
    INÍCIO
    ════════════════════════════════════════════════════════════ */
 (async function init(){
-  await loadProducts();   // carrega presentes já no começo (lista de desejos e sacola funcionam em qualquer página)
-  if(familia) await loadFamiliaState();   // se já está logada num aparelho, restaura desejos/níveis
   updateIdentityUI();
+  await router();                              // mostra a view da URL NA HORA (a rota carrega os produtos que precisar)
+  if(!PRODUCTS.length) await loadProducts();   // garante produtos p/ selos/sacola quando a rota inicial é o início
   updateBadges();
-  await router();
+  if(familia) loadFamiliaState();              // restaura desejos/níveis em segundo plano
 })();
 
 /* ════════════════════════════════════════════════════════════
