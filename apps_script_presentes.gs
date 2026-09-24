@@ -121,9 +121,40 @@ function json_(obj) {
   return ContentService.createTextOutput(JSON.stringify(obj)).setMimeType(ContentService.MimeType.JSON);
 }
 
-/* ─────────── SITE PEDE A LISTA ─────────── */
+/* ═══════════ CONVIDADOS (auto-cadastro por nome + sobrenome) ═══════════
+   Guarda, por pessoa, os desejos e os níveis. A aba "Convidados" é criada
+   sozinha. Colunas: A Nome | B Chave(normalizada) | C Desejos | D Niveis */
+function parseArr_(v){ try{ var a=JSON.parse(v); return Array.isArray(a)?a:[]; }catch(e){ return String(v||'').split(',').map(function(s){return s.trim();}).filter(String); } }
+function parseObj_(v){ try{ var o=JSON.parse(v); return (o&&typeof o==='object')?o:{}; }catch(e){ return {}; } }
+function normNome_(s){ return String(s||'').toLowerCase().trim().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/\s+/g,' '); }
+function convSheet_(){
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sh = ss.getSheetByName('Convidados');
+  if(!sh){ sh = ss.insertSheet('Convidados'); sh.appendRow(['Nome','Chave','Desejos','Niveis']); }
+  return sh;
+}
+function identificar_(nome){
+  var chave = normNome_(nome);
+  if(!chave) return { ok:false };
+  var lock = LockService.getScriptLock();
+  try { lock.waitLock(10000); } catch(err) {}
+  try {
+    var sh = convSheet_();
+    var vals = sh.getDataRange().getValues();
+    for(var i=1;i<vals.length;i++){
+      if(String(vals[i][1]) === chave){
+        return { ok:true, id:i+1, nome:String(vals[i][0]||nome), desejos:parseArr_(vals[i][2]), niveis:parseObj_(vals[i][3]), novo:false };
+      }
+    }
+    sh.appendRow([nome, chave, '[]', '{}']);   // cadastra na hora
+    return { ok:true, id:sh.getLastRow(), nome:nome, desejos:[], niveis:{}, novo:true };
+  } finally { try{ lock.releaseLock(); }catch(e){} }
+}
+
+/* ─────────── SITE PEDE A LISTA / IDENTIFICA CONVIDADO ─────────── */
 function doGet(e) {
   try {
+    if (e && e.parameter && e.parameter.acao === 'identificar') return json_(identificar_(e.parameter.nome));
     return json_(getProdutos_());
   } catch (err) {
     return json_({ erro: String(err) });
@@ -136,6 +167,18 @@ function doPost(e) {
   try { lock.waitLock(10000); } catch (err) { return json_({ ok:false, reason:'busy' }); }
   try {
     var body = JSON.parse(e.postData.contents);
+
+    // salvar desejos/níveis de um convidado (aba Convidados)
+    if (body.acao === 'salvarConvidado') {
+      var csh = convSheet_();
+      var crow = Number(body.id);
+      if (crow >= 2) {
+        if (body.desejos != null) csh.getRange(crow, 3).setValue(JSON.stringify(body.desejos));
+        if (body.niveis  != null) csh.getRange(crow, 4).setValue(JSON.stringify(body.niveis));
+      }
+      return json_({ ok:true });
+    }
+
     var sheet = getSheet_();
     var headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
     var map = mapColunas_(headers);
