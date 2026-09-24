@@ -119,7 +119,7 @@ function heartSVG(){ return `<svg viewBox="0 0 24 24"><path class="houtline" d="
    ROTEADOR (menu / páginas)
    ════════════════════════════════════════════════════════════ */
 function scrollTopo(){ try{ window.scrollTo(0,0); document.documentElement.scrollTop=0; document.body.scrollTop=0; }catch(e){} }
-function go(route){ location.hash = route ? '#/'+route : '#/'; if(window.innerWidth<=780) closeMenu(); scrollTopo(); }
+function go(route){ location.hash = route ? '#/'+route : '#/'; if(window.innerWidth<=780) closeMenu(); scrollTopo(); router(); }
 function showView(name){
   document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
   $('#view-'+name).classList.add('active');
@@ -131,8 +131,12 @@ function showView(name){
     l.classList.toggle('active', l.dataset.route === rota);
   });
 }
+let _navHash = null;
 async function router(){
-  const h = location.hash.replace(/^#\/?/, '');
+  const raw = location.hash;
+  if (raw === _navHash) return;   // já renderizado (evita go()+hashchange fazerem 2x)
+  _navHash = raw;
+  const h = raw.replace(/^#\/?/, '');
   if (h.startsWith('produto/')) { showView('produto'); if(!PRODUCTS.length) await loadProducts(); renderProduct(h.split('/')[1]); scrollTopo(); }
   else if (h === 'presentes') { showView('presentes'); scrollTopo(); await ensureProductsAndRenderGrid(); }
   else if (h === 'progresso') { showView('progresso'); if(!PRODUCTS.length) await loadProducts(); renderProgress(); scrollTopo(); }
@@ -153,6 +157,10 @@ async function ensureProductsAndRenderGrid(){
   await loadProducts();
   renderGrid();
   updateBadges();
+  // 3) ao ENTRAR em Presentes, pergunta o nome uma vez (perfil montado antes de escolher)
+  if(!logado() && !localMode() && !askedIdentity){
+    setTimeout(()=>openId({ title:'Qual é o seu nome?', skip:()=>{}, skipText:'Agora não' }), 400);
+  }
 }
 
 /* ════════════════════════════════════════════════════════════
@@ -313,10 +321,10 @@ function closeGiftModal(){ $('#giftModalOverlay').classList.remove('open'); pend
 
 function confirmGift(){
   const id=pendingGift; if(!id) return;
-  // pede o nome (pra salvar o presente na FAMÍLIA), mas com opção de PULAR — nunca trava
-  if(!logado() && !localMode()){
+  // pede o nome (pra salvar na FAMÍLIA) só se ainda não perguntamos nesta sessão; com opção de PULAR
+  if(!logado() && !localMode() && !askedIdentity){
     $('#giftModalOverlay').classList.remove('open');
-    openId({ title:'Antes, quem é você?', after:()=>confirmGiftNow(id), skip:()=>confirmGiftNow(id) });
+    openId({ title:'Antes, quem é você?', skipText:'Reservar sem entrar', after:()=>confirmGiftNow(id), skip:()=>confirmGiftNow(id) });
     return;
   }
   confirmGiftNow(id);
@@ -634,14 +642,20 @@ tick(); setInterval(tick,1000);
    ADICIONAR À AGENDA (Google Agenda pré-preenchido + .ics com aviso 3h antes)
    ════════════════════════════════════════════════════════════ */
 function addCalendar(){
-  // abre o Google Agenda já preenchido (sem baixar arquivo)
-  const g='https://calendar.google.com/calendar/render?action=TEMPLATE'
-    +'&text='+encodeURIComponent('Casamento Matheus e Rafa - Almoço 13h')
-    +'&dates=20261114T160000Z/20261114T190000Z'
-    +'&details='+encodeURIComponent('Casamento no civil e Chá de Cama e Banho de Matheus e Rafaella. Almoço às 13h. Te esperamos!')
-    +'&location='+encodeURIComponent('Rua Frei Bartolomeu Pilar, 191 - Vila Constança, São Paulo - SP')
-    +'&ctz=America/Sao_Paulo';
-  window.open(g,'_blank','noopener');
+  const ehMobile = /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+  if (ehMobile){
+    // no celular, o .ics abre o calendário NATIVO já com o evento (mais confiável que o link do Google)
+    window.location.href = 'evento.ics';
+  } else {
+    // no PC, abre o Google Agenda pré-preenchido
+    const g='https://calendar.google.com/calendar/render?action=TEMPLATE'
+      +'&text='+encodeURIComponent('Casamento Matheus e Rafa - Almoço 13h')
+      +'&dates=20261114T160000Z/20261114T190000Z'
+      +'&details='+encodeURIComponent('Casamento no civil e Chá de Cama e Banho de Matheus e Rafaella. Almoço às 13h. Te esperamos!')
+      +'&location='+encodeURIComponent('Rua Frei Bartolomeu Pilar, 191 - Vila Constança, São Paulo - SP')
+      +'&ctz=America/Sao_Paulo';
+    window.open(g,'_blank','noopener');
+  }
   pendingCal = true;   // ao voltar da agenda, desbloqueia o nível Ferro
 }
 
@@ -650,17 +664,20 @@ function addCalendar(){
    A pessoa digita nome e sobrenome. Se não existe, cria; se existe, recupera.
    ════════════════════════════════════════════════════════════ */
 let idAfter = null;  // callback após o login (ex: retomar a reserva)
-let idSkip = null;   // callback se a pessoa optar por PULAR (ex: reservar sem entrar)
+let idSkip = null;   // callback se a pessoa optar por PULAR
+let askedIdentity = false;  // já perguntamos o nome nesta sessão?
 let familiaSyncOk = false;
 function openId(opts){
   opts = opts || {};
+  askedIdentity = true;
   idAfter = opts.after || null;
   idSkip  = opts.skip  || null;
   const t=$('#idTitle'); if(t) t.textContent = opts.title || 'Quem é você?';
   idStep('id-step-nome');
   const err=$('#idErro'); if(err) err.style.display='none';
   const inp=$('#idNome'); if(inp) inp.value='';
-  const pular=$('#idPular'); if(pular) pular.style.display = idSkip ? 'block' : 'none';  // "pular" só quando faz sentido
+  const pular=$('#idPular');
+  if(pular){ pular.style.display = idSkip ? 'block' : 'none'; pular.textContent = opts.skipText || 'Agora não'; }
   $('#idOverlay').classList.add('open');
   setTimeout(()=>{ const i=$('#idNome'); if(i) i.focus(); }, 300);
 }
@@ -702,11 +719,10 @@ function applyFamilia(id, nome){
   updateIdentityUI(); updateBadges(); renderGrid();
   if(location.hash.includes('progresso')) renderProgress();
 }
-async function setFamilia(id, nome){
-  applyFamilia(id, nome);
-  await loadFamiliaState();       // traz desejos/níveis dessa família
-  updateBadges(); renderGrid();
-  if(idAfter){ const cb=idAfter; idAfter=null; closeId(); setTimeout(cb, 250); return; }  // veio de uma reserva: fecha e retoma
+function setFamilia(id, nome){
+  applyFamilia(id, nome);         // identidade na hora (não espera o servidor)
+  loadFamiliaState();             // traz desejos/níveis EM SEGUNDO PLANO (não trava o login)
+  if(idAfter){ const cb=idAfter; idAfter=null; closeId(); setTimeout(cb, 150); return; }  // veio de uma reserva: fecha e retoma
   const okt=$('#idOkTitle'); if(okt) okt.textContent = 'Tudo certo!';
   idStep('id-step-ok');
 }
@@ -715,7 +731,7 @@ async function loadFamiliaState(){        // traz desejos/níveis pela linha da 
   try{
     const res=await fetch(`${PRODUTOS_URL}?acao=estado&row=${encodeURIComponent(familia.id)}&aba=${encodeURIComponent(ABA_CONVIDADOS)}`);
     const d=await res.json();
-    if(d && d.ok){ familiaSyncOk=true; applyState_(d); }
+    if(d && d.ok){ familiaSyncOk=true; applyState_(d); updateBadges(); renderGrid(); if(location.hash.includes('progresso')) renderProgress(); }
   }catch(e){ console.warn('estado do convidado falhou', e); }
 }
 let _saveFamTimer=null;
