@@ -553,8 +553,8 @@ async function enviar(confirmacao){
   const tel=$('#inputTel').value.trim();
   try{ await fetch(SCRIPT_URL,{ method:'POST', body:JSON.stringify({row:currentRow,telefone:tel,confirmacao}), headers:{'Content-Type':'application/json'} }); }catch(e){}
 }
-$('#btnSim').addEventListener('click', async ()=>{ const b=$('#btnSim'); b.textContent='Confirmando...'; b.disabled=true; await enviar('✅ Sim'); if(currentRow) applyFamilia(currentRow, $('#familiaName').textContent); showStep('step3sim'); });
-$('#btnNao').addEventListener('click', async ()=>{ await enviar('❌ Não'); if(currentRow) applyFamilia(currentRow, $('#familiaName').textContent); showStep('step3nao'); });
+$('#btnSim').addEventListener('click', async ()=>{ const b=$('#btnSim'); b.textContent='Confirmando...'; b.disabled=true; await enviar('✅ Sim'); showStep('step3sim'); });
+$('#btnNao').addEventListener('click', async ()=>{ await enviar('❌ Não'); showStep('step3nao'); });
 
 /* ════════════════════════════════════════════════════════════
    PARTÍCULAS (bokeh rosa)
@@ -624,9 +624,11 @@ function addCalendar(){
 }
 
 /* ════════════════════════════════════════════════════════════
-   IDENTIDADE POR FAMÍLIA  (login por nome, salva no servidor via RSVP)
+   IDENTIDADE  (auto-cadastro por NOME + SOBRENOME, na planilha de presentes)
+   A pessoa digita nome e sobrenome. Se não existe, cria; se existe, recupera.
    ════════════════════════════════════════════════════════════ */
 let idAfter = null;  // callback após o login (ex: retomar a reserva)
+let familiaSyncOk = false;
 function openId(opts){
   opts = opts || {};
   idAfter = opts.after || null;
@@ -640,65 +642,59 @@ function openId(opts){
 function closeId(){ $('#idOverlay').classList.remove('open'); }
 function idStep(id){ document.querySelectorAll('#idOverlay .modal-step').forEach(s=>s.classList.remove('active')); const el=$('#'+id); if(el) el.classList.add('active'); }
 async function idBuscar(){
-  const nome=$('#idNome').value.trim(); if(!nome) return;
-  const b=$('#idBuscar'), err=$('#idErro'); if(err) err.style.display='none';
-  b.disabled=true; b.textContent='Buscando...';
+  const raw = ($('#idNome').value||'').trim().replace(/\s+/g,' ');
+  const err=$('#idErro'), b=$('#idBuscar');
+  if(!raw) return;
+  if(raw.split(' ').length < 2){                 // só o primeiro nome -> pede sobrenome
+    if(err){ err.textContent='Digite também o seu sobrenome (nome e sobrenome).'; err.style.display='block'; }
+    const i=$('#idNome'); if(i) i.focus();
+    return;
+  }
+  if(err) err.style.display='none';
+  b.disabled=true; b.textContent='Entrando...';
   try{
-    const res=await fetch(`${SCRIPT_URL}?nome=${encodeURIComponent(nome)}`);
-    const data=await res.json();
-    const matches = (data.matches && data.matches.length) ? data.matches : (data.found ? [{row:data.row, familia:data.familia}] : []);
-    if(!matches.length){ if(err) err.style.display='block'; }
-    else if(matches.length===1){ await setFamilia(matches[0].row, matches[0].familia); }
-    else { showFamiliaPicker(matches); }
+    const res=await fetch(`${PRODUTOS_URL}?acao=identificar&nome=${encodeURIComponent(raw)}`);
+    const d=await res.json();
+    if(d && d.ok){ familiaSyncOk=true; applyState_(d); await setFamilia(d.id, d.nome || raw); }
+    else { if(err){ err.textContent='Não consegui te registrar agora. Tente de novo em instantes.'; err.style.display='block'; } }
   }catch(e){ if(err){ err.textContent='Erro de conexão. Tente de novo em instantes.'; err.style.display='block'; } }
   b.disabled=false; b.textContent='Continuar →';
 }
-function showFamiliaPicker(matches){
-  const esc = s => String(s||'').replace(/'/g,"\\'").replace(/"/g,'&quot;');
-  $('#idFamiliaList').innerHTML = matches.map(m=>{
-    const nome = m.familia || ('Família de '+(m.responsavel||'')) || 'Família';
-    return `<button class="id-fam-btn" onclick="pickFamilia(${m.row}, '${esc(nome)}')">${nome}</button>`;
-  }).join('');
-  idStep('id-step-familia');
+function applyState_(d){
+  if(Array.isArray(d.desejos)){ wishlist = d.desejos.slice(); save('mr_wishlist', wishlist); }
+  if(d.niveis && typeof d.niveis==='object'){ levels = Object.assign({}, d.niveis); save('mr_levels', levels); }
 }
-async function pickFamilia(row, nome){ await setFamilia(row, nome); }
-/* aplica a identidade (usado tanto pelo modal quanto pelo RSVP), SEM tocar na UI do modal */
-async function applyFamilia(id, nome){
-  familia = { id:id, nome:nome || 'Família' };
+/* aplica a identidade (sem tocar na UI do modal) */
+function applyFamilia(id, nome){
+  familia = { id:id, nome:nome || '' };
   save('mr_familia', familia);
-  await loadFamiliaState();          // traz desejos + níveis já salvos
   updateIdentityUI(); updateBadges(); renderGrid();
   if(location.hash.includes('progresso')) renderProgress();
 }
 async function setFamilia(id, nome){
-  await applyFamilia(id, nome);
+  applyFamilia(id, nome);
   if(idAfter){ const cb=idAfter; idAfter=null; closeId(); setTimeout(cb, 250); return; }  // veio de uma reserva: fecha e retoma
-  const okt=$('#idOkTitle'); if(okt) okt.textContent = 'Oi, ' + familia.nome + '!';
+  const okt=$('#idOkTitle'); if(okt) okt.textContent = 'Oi, ' + (familia.nome||'') + '!';
   idStep('id-step-ok');
 }
-let familiaSyncOk = false;   // só sincroniza desejos/níveis se o script NOVO do RSVP responder (senão, não grava — evita apagar o RSVP)
-async function loadFamiliaState(){
-  if(!familia) return;
+async function loadFamiliaState(){        // ao reabrir num aparelho já logado: reidentifica e traz o estado
+  if(!familia || !familia.nome) return;
   try{
-    const res=await fetch(`${SCRIPT_URL}?acao=estado&row=${encodeURIComponent(familia.id)}`);
+    const res=await fetch(`${PRODUTOS_URL}?acao=identificar&nome=${encodeURIComponent(familia.nome)}`);
     const d=await res.json();
-    if(d && d.ok){
-      familiaSyncOk = true;   // script novo confirmado -> pode salvar com segurança
-      if(Array.isArray(d.desejos)){ wishlist = d.desejos.slice(); save('mr_wishlist', wishlist); }
-      if(d.niveis && typeof d.niveis==='object'){ levels = Object.assign({}, d.niveis); save('mr_levels', levels); }
-    }
-  }catch(e){ console.warn('estado da família falhou', e); }
+    if(d && d.ok){ familiaSyncOk=true; familia.id=d.id; save('mr_familia', familia); applyState_(d); }
+  }catch(e){ console.warn('estado do convidado falhou', e); }
 }
 let _saveFamTimer=null;
 function saveFamiliaState(){
-  if(!familia || !familiaSyncOk) return;   // trava: não grava se o script novo não estiver ativo
+  if(!familia || !familiaSyncOk) return;
   clearTimeout(_saveFamTimer);
   _saveFamTimer=setTimeout(()=>{
-    fetch(SCRIPT_URL, { method:'POST', body: JSON.stringify({ acao:'salvar', row:familia.id, desejos:wishlist, niveis:levels }) }).catch(()=>{});
+    fetch(PRODUTOS_URL, { method:'POST', body: JSON.stringify({ acao:'salvarConvidado', id:familia.id, desejos:wishlist, niveis:levels }) }).catch(()=>{});
   }, 700);
 }
 function sairFamilia(){
-  familia=null; try{ localStorage.removeItem('mr_familia'); }catch(e){}
+  familia=null; familiaSyncOk=false; try{ localStorage.removeItem('mr_familia'); }catch(e){}
   updateIdentityUI(); updateBadges(); renderGrid();
   if(location.hash.includes('progresso')) renderProgress();
 }
