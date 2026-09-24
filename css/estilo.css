@@ -803,3 +803,8 @@ body.intro-lock{ overflow:hidden; }
 .gift-divider small{ display:block; font-family:var(--font-caps); font-size:11px; letter-spacing:1px; text-transform:uppercase; color:var(--pink-deep); margin-top:6px; }
 .gift-card.is-taken{ opacity:.62; filter:saturate(.55); }
 .gift-card.is-taken:hover{ opacity:.82; }
+
+/* ═══════════════════════════════════════════════════════════════
+   REVISÃO 17 — mobile: inputs 16px (impede o zoom automático do iOS)
+   ═══════════════════════════════════════════════════════════════ */
+.modal-input, input, textarea, select{ font-size:16px !important; }
