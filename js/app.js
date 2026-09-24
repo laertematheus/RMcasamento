@@ -157,10 +157,7 @@ async function ensureProductsAndRenderGrid(){
   await loadProducts();
   renderGrid();
   updateBadges();
-  // 3) ao ENTRAR em Presentes, pergunta o nome uma vez (perfil montado antes de escolher)
-  if(!logado() && !localMode() && !askedIdentity){
-    setTimeout(()=>openId({ title:'Qual é o seu nome?', skip:()=>{}, skipText:'Agora não' }), 400);
-  }
+  // (o nome é pedido só na hora de reservar — não ao entrar)
 }
 
 /* ════════════════════════════════════════════════════════════
