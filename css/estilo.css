@@ -782,3 +782,15 @@ body.intro-lock{ overflow:hidden; }
 .id-fam-list{ display:flex; flex-direction:column; gap:10px; margin-top:8px; }
 .id-fam-btn{ width:100%; padding:15px 18px; border:1px solid var(--pink-soft); background:var(--pink-pale); border-radius:10px; cursor:pointer; font-size:15px; color:var(--ink); text-align:left; transition:.2s; }
 .id-fam-btn:hover{ border-color:var(--pink-deep); background:#fff; }
+
+/* ═══════════════════════════════════════════════════════════════
+   REVISÃO 15 — barra de progresso de presentes esgotados (topo da lista)
+   ═══════════════════════════════════════════════════════════════ */
+.gift-progress{ max-width:520px; margin:22px auto 0; }
+.gift-progress:empty{ display:none; }
+.gp-top{ display:flex; justify-content:space-between; align-items:baseline; margin-bottom:8px; }
+.gp-count{ font-family:var(--font-caps); font-size:12px; letter-spacing:.4px; color:var(--ink); font-weight:600; }
+.gp-pct{ font-family:var(--font-caps); font-size:12px; font-weight:700; color:#111; }
+.gp-track{ height:12px; background:#e9e4e7; border-radius:999px; overflow:hidden; }
+.gp-fill{ height:100%; background:#111; border-radius:999px; transition:width .6s cubic-bezier(.2,.7,.2,1); }
+.gp-ends{ display:flex; justify-content:space-between; margin-top:6px; font-family:var(--font-caps); font-size:10.5px; color:var(--ink-3); }
