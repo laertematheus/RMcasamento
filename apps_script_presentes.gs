@@ -138,11 +138,13 @@ function convSheet_(aba){
 }
 /* 1a linha (canonica) de uma familia — pra todos os membros compartilharem o mesmo estado */
 function linhaCanonica_(vals, fam){
-  for(var i=1;i<vals.length;i++){ if(String(vals[i][CV.familia])===fam) return i+1; }
+  var alvo = String(fam).trim().toLowerCase();
+  for(var i=1;i<vals.length;i++){ if(String(vals[i][CV.familia]).trim().toLowerCase()===alvo) return i+1; }  // ignora espaço/maiúscula sobrando
   return -1;
 }
 /* palavras que NÃO identificam ninguém (ignoradas na busca) */
-var STOP_ = { 'familia':1,'e':1,'de':1,'da':1,'do':1,'das':1,'dos':1,'a':1,'o':1,'filhos':1,'filho':1,'filha':1,'filhas':1 };
+var STOP_ = { 'familia':1,'e':1,'de':1,'da':1,'do':1,'das':1,'dos':1,'a':1,'o':1,'filhos':1,'filho':1,'filha':1,'filhas':1,
+  'vo':1,'tia':1,'tio':1,'namorada':1,'namorado':1,'dona':1,'seu':1 };  // "Vó Beth" não pode bater com toda vó da lista
 /* todas as palavras de uma linha: Nome + Apelidos + Familia (ex: "Késia, Samuel" acha o Samuel) */
 function palavrasLinha_(r){
   var txt = [r[CV.nome], r[CV.apelidos], r[CV.familia]].map(normNome_).join(' ');
@@ -174,14 +176,14 @@ function identificar_(nome, aba){
       var ws = palavrasLinha_(vals[i]); if(!ws.length) continue;
       var bate = tokens.some(function(t){ return ws.some(function(w){ return cmp(t, w); }); });
       if(!bate) continue;
-      var famTxt = String(vals[i][CV.familia]||'');
+      var famTxt = String(vals[i][CV.familia]||'').trim();
       var fam = famTxt || String(vals[i][CV.nome]||('linha '+(i+1)));
-      if(vistos[fam]) continue;
-      vistos[fam] = true;
+      if(vistos[fam.toLowerCase()]) continue;
+      vistos[fam.toLowerCase()] = true;
       var canon = famTxt ? linhaCanonica_(vals, famTxt) : -1; if(canon<2) canon=i+1;
       var membros = [];   // nomes de quem está nessa família (pra pessoa reconhecer a dela)
       for(var k=1;k<vals.length;k++){
-        var mesma = famTxt ? String(vals[k][CV.familia]||'')===famTxt : k===i;
+        var mesma = famTxt ? String(vals[k][CV.familia]||'').trim().toLowerCase()===famTxt.toLowerCase() : k===i;
         if(mesma && String(vals[k][CV.nome]||'').trim()) membros.push(String(vals[k][CV.nome]).trim());
       }
       matches.push({ row:canon, familia:fam, membros:membros });
