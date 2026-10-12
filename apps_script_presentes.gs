@@ -127,7 +127,7 @@ function json_(obj) {
    Estrutura da aba: A Nome | B Apelidos(virgula) | C Familia | D..F | G Desejos | H Niveis
    O convidado digita o nome; achamos a familia dele. Desejos/niveis ficam na
    1a linha daquela familia (compartilhado por todos os membros). */
-var CV = { nome:0, apelidos:1, familia:2, desejos:6, niveis:7 };  // 0-based (Desejos=G, Niveis=H)
+var CV = { nome:0, apelidos:1, familia:2, presente:6, niveis:7, desejos:8 };  // 0-based: G=Presente (nomes dos presentes reservados), H=Badge, I=Desejos (corações)
 function parseArr_(v){ try{ var a=JSON.parse(v); return Array.isArray(a)?a:[]; }catch(e){ return String(v||'').split(',').map(function(s){return s.trim();}).filter(String); } }
 function parseObj_(v){ try{ var o=JSON.parse(v); return (o&&typeof o==='object')?o:{}; }catch(e){ return {}; } }
 var _DIAC = new RegExp('[\\u0300-\\u036f]','g');   // remove acentos (ASCII-safe, sem caractere invisivel)
@@ -196,8 +196,22 @@ function identificar_(nome, aba){
 function estadoConvidado_(row, aba){
   var sh = convSheet_(aba); if(!sh) return { ok:false };
   var r = Number(row); if(r<2) return { ok:false };
-  var v = sh.getRange(r,1,1,8).getValues()[0];
+  var v = sh.getRange(r,1,1,9).getValues()[0];
   return { ok:true, familia:String(v[CV.familia]||''), desejos:parseArr_(v[CV.desejos]), niveis:parseObj_(v[CV.niveis]) };
+}
+
+/* escreve na coluna G (Presente) da família os NOMES dos presentes que ela reservou
+   -> a planilha interna mostra quem deu o quê. Só p/ quem entrou com o nome (chave "fam<linha>"). */
+function anotaPresentes_(sheet, map, colReservado, quem, aba){
+  try{
+    var m = String(quem).match(/^fam(\d+)$/); if(!m) return;
+    var csh = convSheet_(aba); if(!csh) return;
+    var vals = sheet.getDataRange().getValues(), nomes = [];
+    for (var r = 1; r < vals.length; r++){
+      if (listaReservados_(vals[r][colReservado-1]).indexOf(quem) >= 0) nomes.push(String(vals[r][map.nome]));
+    }
+    csh.getRange(Number(m[1]), CV.presente+1).setValue(nomes.join(', '));
+  }catch(err){}
 }
 
 /* ─────────── SITE PEDE A LISTA / IDENTIFICA CONVIDADO ─────────── */
@@ -223,7 +237,10 @@ function doPost(e) {
       var csh = convSheet_(body.aba);
       var crow = Number(body.id);
       if (csh && crow >= 2) {
-        if (body.desejos != null) csh.getRange(crow, CV.desejos+1).setValue(JSON.stringify(body.desejos));
+        if (body.desejos != null){
+          if (!csh.getRange(1, CV.desejos+1).getValue()) csh.getRange(1, CV.desejos+1).setValue('Desejos');
+          csh.getRange(crow, CV.desejos+1).setValue(JSON.stringify(body.desejos));
+        }
         if (body.niveis  != null) csh.getRange(crow, CV.niveis+1).setValue(JSON.stringify(body.niveis));
       }
       return json_({ ok:true });
@@ -249,12 +266,14 @@ function doPost(e) {
       }
       list.push(quem);
       sheet.getRange(row, colReservado).setValue(list.join(','));
+      anotaPresentes_(sheet, map, colReservado, quem, body.aba);
       return json_({ ok:true, reservado:list.join(','), restam: Math.max(0, qtd - list.length) });
 
     } else if (body.action === 'cancelar') {
       var list2 = listaReservados_(sheet.getRange(row, colReservado).getValue());
       list2 = list2.filter(function (t) { return t !== quem; });     // tira só a minha unidade
       sheet.getRange(row, colReservado).setValue(list2.join(','));
+      anotaPresentes_(sheet, map, colReservado, quem, body.aba);
       return json_({ ok:true, reservado:list2.join(',') });
     }
     return json_({ ok:false, reason:'acao' });

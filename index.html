@@ -25,7 +25,7 @@
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23EF9CD0' d='M12 21s-8-5.3-8-11a4.5 4.5 0 0 1 8-2.9A4.5 4.5 0 0 1 20 10c0 5.7-8 11-8 11z'/%3E%3C/svg%3E">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400;1,500&family=Jost:wght@200;300;400;500;600&display=swap" rel="stylesheet">
 <link href="https://fonts.googleapis.com/css2?family=Pinyon+Script&family=Poppins:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400;1,500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/estilo.css?v=20261012b">
+<link rel="stylesheet" href="css/estilo.css?v=20261012c">
 </head>
 <body>
 <canvas id="canvas"></canvas>
@@ -333,8 +333,16 @@
       <button class="modal-btn-yes" onclick="familiaMaisUm()">Sim, adicionar mais um</button>
       <button class="modal-btn-no" onclick="familiaSoEsse()">Não, fica só esse</button>
     </div>
+    <div class="modal-step" id="gstep-cancel">
+      <span class="modal-eyebrow">Cancelar reserva</span>
+      <h2 class="modal-title">Tem certeza que deseja<br>cancelar seu presente?</h2>
+      <div class="modal-prod-preview" id="cancelPreview"></div>
+      <p class="modal-nota" style="margin-top:0;margin-bottom:22px;">Ele volta para a lista e outro convidado<br>poderá escolher.</p>
+      <button class="modal-btn-yes" onclick="closeGiftModal()">Manter meu presente</button>
+      <button class="modal-btn-no" onclick="confirmCancel()">Sim, cancelar reserva</button>
+    </div>
     <div class="modal-step active" id="gstep-ask">
-      <span class="modal-eyebrow">Voltou da loja?</span>
+      <span class="modal-eyebrow">Confirmar presente</span>
       <h2 class="modal-title">Você selecionou<br>este presente?</h2>
       <div class="modal-prod-preview" id="giftModalPreview"></div>
       <p class="modal-nota" style="margin-top:0;margin-bottom:22px;">Se sim, vamos retirá-lo da lista do site<br>para que outro convidado não escolha o mesmo.</p>
@@ -381,6 +389,6 @@
 
 <script src="js/confetti.min.js?v=20260921i"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/bodymovin/5.12.2/lottie.min.js"></script>
-<script src="js/app.js?v=20261012b"></script>
+<script src="js/app.js?v=20261012c"></script>
 </body>
 </html>

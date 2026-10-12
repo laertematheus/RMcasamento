@@ -6,12 +6,12 @@ METHOD:PUBLISH
 BEGIN:VEVENT
 UID:civil-mr-20261114@matheus-rafaella
 DTSTAMP:20261012T000000Z
-SEQUENCE:1
+SEQUENCE:2
 DTSTART:20261114T160000Z
 DTEND:20261114T190000Z
 SUMMARY:Casamento Matheus e Rafa - Almoço 13h
-LOCATION:Salão de festas Espaço Family - Av. Bartolomeu de Carlos\, 675 - Jardim Flor da Montanha\, Guarulhos - SP\, 07097-420
-DESCRIPTION:Casamento no civil de Matheus e Rafaella. Almoço às 13h. Te esperamos!
+LOCATION:Av. Bartolomeu de Carlos\, 675 - Jardim Flor da Montanha\, Guarulhos - SP\, 07097-420\, Brasil
+DESCRIPTION:Casamento no civil e Chá de Cama e Banho de Matheus e Rafaella. Almoço às 13h no Salão de Festas Espaço Family. Te esperamos! 👰🤵❤️
 BEGIN:VALARM
 TRIGGER:-PT3H
 ACTION:DISPLAY
