@@ -15,6 +15,13 @@ const PRODUTOS_URL = 'https://script.google.com/macros/s/AKfycbw47uIHThSgKbcoOyX
 // >>> Quando a FESTA (Fase 2) abrir, troque só esta linha para 'Convidados 02/05/27'. <<<
 const ABA_CONVIDADOS = 'Convidados 14/11/26';
 
+// Data do evento da Fase 1 (civil + chá). Depois do dia, as missões da Fase 1
+// viram "Esse evento já passou · Resgatar agora" (quem só foi convidado à festa não fica travado).
+// Teste antes da data: abra o site com ?pos=1
+const FASE1_DATA = new Date('2026-11-14T13:00:00-03:00');
+const FASE1_FIM  = new Date('2026-11-15T00:00:00-03:00');
+function fase1Passou(){ return /[?&]pos=1(&|$)/.test(location.search) || Date.now() >= FASE1_FIM.getTime(); }
+
 /* ════════════════════════════════════════════════════════════
    PRESENTES DE EXEMPLO (aparecem só enquanto PRODUTOS_URL está vazio)
    ════════════════════════════════════════════════════════════ */
@@ -92,7 +99,8 @@ async function loadProducts(){
       spec: p.spec || p.descricao || '',
       qtd: (p.qtd != null ? p.qtd : (p.quantidade != null ? p.quantidade : '1')),
       fundo: p.fundo || '',
-      reservado: p.reservado || ''
+      reservado: p.reservado || '',
+      entrega: p.entrega || ''
     }));
     save('mr_products_cache', PRODUCTS); // guarda p/ abrir instantâneo na próxima visita
   } catch(e){
@@ -113,6 +121,25 @@ function isCut(p){ const f=String((p&&p.fundo)||'').trim().toLowerCase(); return
    HTML do placeholder dentro do atributo onerror: ele tem aspas duplas e quebra a tag) */
 function imgFail(el){ try{ el.parentNode.innerHTML = phSVG(); }catch(e){} }
 function mediaHTML(p){ return p.img ? `<img class="${isCut(p)?'is-cut':''}" src="${p.img}" alt="${(p.nome||'').replace(/"/g,'&quot;')}" loading="lazy" onerror="imgFail(this)">` : phSVG(); }
+/* texto seguro p/ HTML (descrição vem da planilha) */
+function esc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+/* prazo de entrega: aceita "5", "5 dias", "5 a 10 dias" -> usa o MAIOR número (pior caso) */
+function entregaDias(p){ const ns=String((p&&p.entrega)||'').match(/\d+/g); return ns ? Math.max.apply(null, ns.map(Number)) : 0; }
+function fmtData(d){ return String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0'); }
+/* "Chega em ~10 dias · compre até 03/11 pra chegar antes do chá" */
+function entregaHTML(p, compacto){
+  const dias = entregaDias(p);
+  if (!dias){ const t=String((p&&p.entrega)||'').trim(); return t ? `<p class="prod-entrega"><span class="pe-ico">🚚</span><span>Entrega estimada: <b>${esc(t)}</b></span></p>` : ''; }
+  let ate = '';
+  if (!fase1Passou()){
+    const lim = new Date(FASE1_DATA.getTime() - (dias+2)*86400000);   // +2 dias de folga
+    ate = lim.getTime() > Date.now()
+      ? ` · compre até <b>${fmtData(lim)}</b> pra chegar antes do chá`
+      : ` · <b>compre logo</b> pra chegar a tempo do chá`;
+  }
+  if (compacto) return `<span class="gift-entrega">🚚 ~${dias} dia${dias>1?'s':''}</span>`;
+  return `<p class="prod-entrega"><span class="pe-ico">🚚</span><span>Chega em <b>~${dias} dia${dias>1?'s':''}</b>${ate}</span></p>`;
+}
 function heartSVG(){ return `<svg viewBox="0 0 24 24"><path class="houtline" d="M12 21s-8-5.3-8-11a4.5 4.5 0 0 1 8-2.9A4.5 4.5 0 0 1 20 10c0 5.7-8 11-8 11z"/></svg>`; }
 
 /* ════════════════════════════════════════════════════════════
@@ -204,6 +231,7 @@ function giftCardHTML(p){
         <p class="gift-price">${money(p.preco)}</p>
         <p class="gift-store">${p.loja}</p>
         ${stock}
+        ${!taken ? entregaHTML(p, true) : ''}
       </div>
     </article>`;
 }
@@ -242,7 +270,8 @@ function renderProduct(id){
         <p class="prod-price">${money(p.preco)}</p>
         <p class="prod-price-note">valor de referência · pode variar por loja</p>
         ${ qtyTotal(p)>1 && !mine ? `<p class="prod-stock ${available(p)>0?'':'out'}">${ available(p)>0 ? `Ainda há <b>${available(p)} de ${qtyTotal(p)}</b> disponíveis — mais de um convidado pode presentear` : 'Todas as unidades já foram escolhidas' }</p>` : '' }
-        ${p.spec?`<p class="prod-spec-lbl">Especificação</p><p class="prod-spec">${p.spec}</p>`:''}
+        ${!taken ? entregaHTML(p) : ''}
+        ${p.spec?`<p class="prod-spec-lbl">Especificação</p><p class="prod-spec">${esc(String(p.spec).replace(/\r\n?/g,'\n').trim())}</p>`:''}
         ${p.loja?`<div class="prod-store-chip"><span class="dot"></span> Sugestão: ${p.loja}</div>`:''}
         ${ mine
           ? `<div class="prod-tip" style="background:var(--pink-pale);border:1px solid var(--pink-soft);"><b>Este é o presente que você escolheu</b><br>Ele está guardado na sua sacola.</div>
@@ -250,10 +279,10 @@ function renderProduct(id){
           : taken
           ? `<div class="prod-tip"><b>Presente esgotado</b> — já foi escolhido pelos convidados.<br>Que tal escolher outro?</div>`
           : `${ !levels['bronze'] ? `<div class="prod-incentivo"><img class="pi-selo" src="selo_bronze.png?v=2" alt="Selo Bronze"><div>Escolha este presente e <b>ganhe o selo de Bronze</b></div></div>` : '' }
-             <a class="prod-buy" href="${p.link}" target="_blank" rel="noopener" onclick="markPending('${p.id}')">
+             <button class="prod-buy" onclick="openBuyIntent('${p.id}')">
                <svg viewBox="0 0 24 24" fill="none"><path d="M6 8h12l-1 12H7L6 8z" stroke="#fff" stroke-width="1.6" stroke-linejoin="round"/><path d="M9 8V6a3 3 0 0 1 6 0v2" stroke="#fff" stroke-width="1.6" stroke-linecap="round"/></svg>
                Comprar na loja
-             </a>
+             </button>
              <button class="prod-bought" onclick="manualBuy('${p.id}')">Já comprei este item ✓</button>
              <div class="prod-tip">Você pode comprar este item <b>na loja que preferir</b>. Vale buscar cupons e promoções — e usar o <b>Méliuz</b> para ganhar cashback.</div>` }
       </div>
@@ -297,6 +326,22 @@ function startBuy(id){
 }
 // o botão "Comprar" agora é um link real (abre em nova aba no celular); só marcamos o pendente
 function markPending(id){ pendingGift=id; }
+/* "Comprar na loja" -> ANTES de sair do site, pergunta se esse vai ser o presente.
+   Quem sai direto pra loja quase nunca volta — então registramos a escolha aqui.
+   Sim -> (nome) -> reserva -> botão "Ir para a loja". Não -> só abre a loja. */
+let storeAfter = null;   // link da loja p/ mostrar no passo de sucesso
+function openBuyIntent(id){
+  const p=productById(id); if(!p) return;
+  pendingGift=id;
+  $('#giftModalPreview2').innerHTML=`<div class="wl-thumb">${mediaHTML(p)}</div><div class="wl-info"><p class="wl-name">${p.nome}</p><p class="wl-price">${money(p.preco)} · ${p.loja}</p></div>`;
+  $('#intentEntrega').innerHTML = entregaHTML(p);
+  const so=$('#intentSoLoja'); so.href=p.link||'#';
+  showGiftStep('gstep-intent');
+  $('#giftModalOverlay').classList.add('open');
+}
+function intentSim(){ const p=productById(pendingGift); storeAfter = p ? (p.link||null) : null; confirmGift(); }
+// "Não, só quero ver na loja": o <a> abre a loja (gesto do clique = não é bloqueado); ao voltar perguntamos de novo
+function intentSoLoja(){ const id=pendingGift; $('#giftModalOverlay').classList.remove('open'); pendingGift=id; }
 // contingência manual: "Já comprei este item" -> abre o modal de confirmação na hora
 function manualBuy(id){ pendingGift=id; askGiftConfirm(); }
 function onReturnToSite(){
@@ -308,6 +353,8 @@ document.addEventListener('visibilitychange', ()=>{ if(!document.hidden) onRetur
 
 function askGiftConfirm(){
   if(!pendingGift) return;
+  if($('#giftModalOverlay').classList.contains('open') || $('#idOverlay').classList.contains('open')) return; // já tem um modal aberto
+  storeAfter=null;
   const p=productById(pendingGift); if(!p){ pendingGift=null; return; }
   $('#giftModalPreview').innerHTML=`<div class="wl-thumb">${mediaHTML(p)}</div><div class="wl-info"><p class="wl-name">${p.nome}</p><p class="wl-price">${money(p.preco)} · ${p.loja}</p></div>`;
   showGiftStep('gstep-ask');
@@ -322,19 +369,42 @@ function confirmGift(){
   // tem "Reservar sem entrar" pra nunca travar.
   if(!logado() && !localMode()){
     $('#giftModalOverlay').classList.remove('open');
-    openId({ title:'Antes, quem é você?', skipText:'Reservar sem entrar', after:()=>confirmGiftNow(id), skip:()=>confirmGiftNow(id) });
+    openId({ title:'Antes, quem é você?', skipText:'Reservar sem entrar', after:()=>checarFamilia(id), skip:()=>confirmGiftNow(id) });
     return;
   }
+  checarFamilia(id);
+}
+/* a família já tem presente? (Ludmila escolheu um, Alan entra depois) -> avisa e deixa adicionar mais um */
+let familiaConfirmou = false;
+function checarFamilia(id){
+  const outros = logado() ? myGifts().filter(p=>p.id!==id) : [];
+  if (outros.length && !familiaConfirmou){
+    pendingGift=id;
+    $('#famJaTem').innerHTML = outros.map(p=>`<b>${p.nome}</b>`).join(', ');
+    showGiftStep('gstep-familia');
+    $('#giftModalOverlay').classList.add('open');
+    return;
+  }
+  familiaConfirmou = false;
   confirmGiftNow(id);
 }
+function familiaMaisUm(){ const id=pendingGift; familiaConfirmou=true; checarFamilia(id); }
+function familiaSoEsse(){ storeAfter=null; closeGiftModal(); }
 function confirmGiftNow(id){
   const primeiroPresente = !levels['bronze'];   // 1º presente desbloqueia o nível Bronze
   setReservedNow(id, true);                      // reserva OTIMISTA
   updateBadges(); renderGrid();
   pendingGift=null;
   // FEEDBACK IMEDIATO (não espera o servidor — experiência rápida)
-  if (primeiroPresente){ closeGiftModal(); unlockLevel('bronze'); }
-  else { showGiftStep('gstep-done'); fireConfetti(); }
+  const comLoja = !!storeAfter, p=productById(id), loja=$('#doneLoja'), ent=$('#doneEntrega');
+  if(loja){ loja.href = comLoja ? storeAfter : '#'; loja.style.display = comLoja ? '' : 'none'; }
+  if(ent) ent.innerHTML = (comLoja && p) ? entregaHTML(p) : '';
+  storeAfter=null;
+  if (primeiroPresente && !comLoja){ closeGiftModal(); unlockLevel('bronze'); }
+  else {
+    $('#giftModalOverlay').classList.add('open'); showGiftStep('gstep-done');   // reabre (o login pode ter fechado)
+    if (primeiroPresente) unlockLevel('bronze'); else fireConfetti();          // selo aparece por cima e some sozinho
+  }
   // sincroniza em segundo plano; se (raro) já tiver esgotado, reverte e avisa depois
   reserveWrite(id, 'reservar').then(res=>{
     if (res && res.ok === false){
@@ -408,8 +478,8 @@ function fireConfetti(){
    PROGRESSO — selos de cera (Ferro→Diamante)
    ════════════════════════════════════════════════════════════ */
 const LEVELS = [
-  { key:'ferro',    nome:'Ferro',    img:'selo_ferro.png?v=2',    desc:'Adicionou lembrete no calendário',      locked:false },
-  { key:'bronze',   nome:'Bronze',   img:'selo_bronze.png?v=2',   desc:'Reservou um presente de cama e banho',  locked:false },
+  { key:'ferro',    nome:'Ferro',    img:'selo_ferro.png?v=2',    desc:'Adicionou lembrete no calendário',      locked:false, fase:1 },
+  { key:'bronze',   nome:'Bronze',   img:'selo_bronze.png?v=2',   desc:'Reservou um presente de cama e banho',  locked:false, fase:1 },
   { key:'prata',    nome:'Prata',    img:'selo_prata.png?v=2',    desc:'Confirmou presença no casamento',       locked:true, soon:'em breve' },
   { key:'ouro',     nome:'Ouro',     img:'selo_ouro.png?v=2',     desc:'Adicionou o lembrete do casamento',     locked:true, soon:'em breve' },
   { key:'diamante', nome:'Diamante', img:'selo_diamante.png?v=2', desc:'Reservou um presente de casamento',     locked:true, soon:'em breve' },
@@ -450,8 +520,10 @@ function renderProgress(){
   path.innerHTML = LEVELS.map((l,i)=>{
     const on=!!levels[l.key];
     const soon=l.locked;
+    const passou = !on && !soon && l.fase===1 && fase1Passou();
     let status = on ? '<span class="prog-status done">✓ desbloqueado</span>'
                  : soon ? `<span class="prog-status soon"><img class="tl-lockmini" src="lock.svg" alt=""> ${l.soon||'em breve'}</span>`
+                 : passou ? `<span class="prog-passou">Esse evento já passou</span><button class="prog-status todo" onclick="resgatar('${l.key}')">Resgatar agora →</button>`
                         : `<button class="prog-status todo" onclick="progAction('${l.key}')">Fazer agora →</button>`;
     const node=`<div class="prog-node ${on?'on':(soon?'soon':'todo')}">
         <div class="prog-badge">${badgeHTML(l,90)}</div>
@@ -497,6 +569,8 @@ function celebrateLevel(l){
     o.onclick=()=>{ clearTimeout(o._t); o.classList.remove('open'); };
   }, 550);
 }
+/* depois do civil, as missões da Fase 1 podem ser resgatadas (quem só vai na festa não fica travado) */
+function resgatar(key){ if(fase1Passou()) unlockLevel(key); }
 /* botão "Fazer agora" da barra de progresso -> leva para onde a ação acontece */
 function progAction(key){
   if(key==='bronze') go('presentes');
@@ -756,8 +830,14 @@ function updateIdentityUI(){
 /* ════════════════════════════════════════════════════════════
    INÍCIO
    ════════════════════════════════════════════════════════════ */
+function aplicarFase1Passou(){
+  if(!fase1Passou()) return;
+  const b=document.querySelector('.tl-node.active [onclick="addCalendar()"]');
+  if(b){ b.outerHTML = '<span class="btn-mini ghost tl-passou">Esse evento já passou ✓</span>'; }
+}
 (async function init(){
   updateIdentityUI();
+  aplicarFase1Passou();
   await router();                              // mostra a view da URL NA HORA (a rota carrega os produtos que precisar)
   if(!PRODUCTS.length) await loadProducts();   // garante produtos p/ selos/sacola quando a rota inicial é o início
   updateBadges();

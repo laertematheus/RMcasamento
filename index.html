@@ -25,7 +25,7 @@
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23EF9CD0' d='M12 21s-8-5.3-8-11a4.5 4.5 0 0 1 8-2.9A4.5 4.5 0 0 1 20 10c0 5.7-8 11-8 11z'/%3E%3C/svg%3E">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400;1,500&family=Jost:wght@200;300;400;500;600&display=swap" rel="stylesheet">
 <link href="https://fonts.googleapis.com/css2?family=Pinyon+Script&family=Poppins:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400;1,500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/estilo.css?v=20260924l">
+<link rel="stylesheet" href="css/estilo.css?v=20261012a">
 </head>
 <body>
 <canvas id="canvas"></canvas>
@@ -315,6 +315,23 @@
 <div class="modal-overlay" id="giftModalOverlay">
   <div class="modal">
     <button class="modal-close" onclick="closeGiftModal()">✕</button>
+    <div class="modal-step" id="gstep-intent">
+      <span class="modal-eyebrow">Antes de ir pra loja</span>
+      <h2 class="modal-title">Esse vai ser<br>o seu presente?</h2>
+      <div class="modal-prod-preview" id="giftModalPreview2"></div>
+      <div id="intentEntrega"></div>
+      <p class="modal-nota" style="margin-top:0;margin-bottom:22px;">Se sim, já guardamos ele pra você<br>— assim ninguém escolhe o mesmo.</p>
+      <button class="modal-btn-yes" onclick="intentSim()">✓ &nbsp;Sim, vou dar esse presente</button>
+      <a class="modal-btn-no" id="intentSoLoja" href="#" target="_blank" rel="noopener" onclick="intentSoLoja()">Ainda não, só quero ver na loja</a>
+    </div>
+    <div class="modal-step" id="gstep-familia">
+      <div class="modal-icon">🎁</div>
+      <span class="modal-eyebrow">Sua família já presenteou</span>
+      <h2 class="modal-title">Vocês já escolheram<br>um presente</h2>
+      <p class="modal-nota" style="opacity:1;font-size:13px;line-height:1.9;margin-bottom:22px;">Alguém da sua família já reservou: <span id="famJaTem"></span>.<br>Quer adicionar mais um?</p>
+      <button class="modal-btn-yes" onclick="familiaMaisUm()">Sim, adicionar mais um</button>
+      <button class="modal-btn-no" onclick="familiaSoEsse()">Não, fica só esse</button>
+    </div>
     <div class="modal-step active" id="gstep-ask">
       <span class="modal-eyebrow">Voltou da loja?</span>
       <h2 class="modal-title">Você selecionou<br>este presente?</h2>
@@ -328,6 +345,8 @@
       <span class="modal-eyebrow">Presente reservado!</span>
       <h2 class="modal-title">Muito obrigado!</h2>
       <p class="modal-nota" style="opacity:1;font-size:13px;line-height:1.9;">Que carinho enorme.<br>Seu presente já está guardado na sua sacola.</p>
+      <div id="doneEntrega"></div>
+      <a class="modal-btn-yes" id="doneLoja" href="#" target="_blank" rel="noopener" style="display:none;margin-top:18px;" onclick="setTimeout(closeGiftModal,300)">Ir para a loja →</a>
       <button class="modal-btn-primary" style="margin-top:22px;" onclick="closeGiftModal()">Fechar</button>
     </div>
     <div class="modal-step" id="gstep-taken">
@@ -361,6 +380,6 @@
 
 <script src="js/confetti.min.js?v=20260921i"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/bodymovin/5.12.2/lottie.min.js"></script>
-<script src="js/app.js?v=20260924l"></script>
+<script src="js/app.js?v=20261012a"></script>
 </body>
 </html>
