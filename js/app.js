@@ -18,7 +18,6 @@ const ABA_CONVIDADOS = 'Convidados 14/11/26';
 // Data do evento da Fase 1 (civil + chá). Depois do dia, as missões da Fase 1
 // viram "Esse evento já passou · Resgatar agora" (quem só foi convidado à festa não fica travado).
 // Teste antes da data: abra o site com ?pos=1
-const FASE1_DATA = new Date('2026-11-14T13:00:00-03:00');
 const FASE1_FIM  = new Date('2026-11-15T00:00:00-03:00');
 function fase1Passou(){ return /[?&]pos=1(&|$)/.test(location.search) || Date.now() >= FASE1_FIM.getTime(); }
 
@@ -99,8 +98,7 @@ async function loadProducts(){
       spec: p.spec || p.descricao || '',
       qtd: (p.qtd != null ? p.qtd : (p.quantidade != null ? p.quantidade : '1')),
       fundo: p.fundo || '',
-      reservado: p.reservado || '',
-      entrega: p.entrega || ''
+      reservado: p.reservado || ''
     }));
     save('mr_products_cache', PRODUCTS); // guarda p/ abrir instantâneo na próxima visita
   } catch(e){
@@ -123,22 +121,19 @@ function imgFail(el){ try{ el.parentNode.innerHTML = phSVG(); }catch(e){} }
 function mediaHTML(p){ return p.img ? `<img class="${isCut(p)?'is-cut':''}" src="${p.img}" alt="${(p.nome||'').replace(/"/g,'&quot;')}" loading="lazy" onerror="imgFail(this)">` : phSVG(); }
 /* texto seguro p/ HTML (descrição vem da planilha) */
 function esc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
-/* prazo de entrega: aceita "5", "5 dias", "5 a 10 dias" -> usa o MAIOR número (pior caso) */
-function entregaDias(p){ const ns=String((p&&p.entrega)||'').match(/\d+/g); return ns ? Math.max.apply(null, ns.map(Number)) : 0; }
-function fmtData(d){ return String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0'); }
-/* "Chega em ~10 dias · compre até 03/11 pra chegar antes do chá" */
-function entregaHTML(p, compacto){
-  const dias = entregaDias(p);
-  if (!dias){ const t=String((p&&p.entrega)||'').trim(); return t ? `<p class="prod-entrega"><span class="pe-ico">🚚</span><span>Entrega estimada: <b>${esc(t)}</b></span></p>` : ''; }
-  let ate = '';
-  if (!fase1Passou()){
-    const lim = new Date(FASE1_DATA.getTime() - (dias+2)*86400000);   // +2 dias de folga
-    ate = lim.getTime() > Date.now()
-      ? ` · compre até <b>${fmtData(lim)}</b> pra chegar antes do chá`
-      : ` · <b>compre logo</b> pra chegar a tempo do chá`;
-  }
-  if (compacto) return `<span class="gift-entrega">🚚 ~${dias} dia${dias>1?'s':''}</span>`;
-  return `<p class="prod-entrega"><span class="pe-ico">🚚</span><span>Chega em <b>~${dias} dia${dias>1?'s':''}</b>${ate}</span></p>`;
+/* descrição da planilha -> HTML legível:
+   - quebra de linha da célula (Ctrl/Cmd+Enter no Sheets) vira linha nova
+   - 3+ espaços seguidos viram parágrafo (jeito "improvisado" de quebrar linha)
+   - "Ps:" sempre começa um parágrafo novo
+   - link vira botãozinho curto (link gigante sem espaço estourava a largura da tela no celular) */
+function specHTML(raw){
+  let t = String(raw||'').replace(/\r\n?/g,'\n').replace(/[ \t]{3,}/g,'\n\n');
+  t = t.replace(/\s*\b(p\.?\s?s\.?\s*:)/gi, '\n\n$1');
+  t = t.replace(/[ \t]+\n/g,'\n').replace(/\n{3,}/g,'\n\n').trim();
+  return esc(t).replace(/https?:\/\/[^\s<"]+/g, u=>{
+    let dom=''; try{ dom=new URL(u.replace(/&amp;/g,'&')).hostname.replace(/^www\./,''); }catch(e){ dom='link'; }
+    return `<a class="spec-link" href="${u}" target="_blank" rel="noopener">${dom} ↗</a>`;
+  });
 }
 function heartSVG(){ return `<svg viewBox="0 0 24 24"><path class="houtline" d="M12 21s-8-5.3-8-11a4.5 4.5 0 0 1 8-2.9A4.5 4.5 0 0 1 20 10c0 5.7-8 11-8 11z"/></svg>`; }
 
@@ -231,7 +226,6 @@ function giftCardHTML(p){
         <p class="gift-price">${money(p.preco)}</p>
         <p class="gift-store">${p.loja}</p>
         ${stock}
-        ${!taken ? entregaHTML(p, true) : ''}
       </div>
     </article>`;
 }
@@ -270,8 +264,7 @@ function renderProduct(id){
         <p class="prod-price">${money(p.preco)}</p>
         <p class="prod-price-note">valor de referência · pode variar por loja</p>
         ${ qtyTotal(p)>1 && !mine ? `<p class="prod-stock ${available(p)>0?'':'out'}">${ available(p)>0 ? `Ainda há <b>${available(p)} de ${qtyTotal(p)}</b> disponíveis — mais de um convidado pode presentear` : 'Todas as unidades já foram escolhidas' }</p>` : '' }
-        ${!taken ? entregaHTML(p) : ''}
-        ${p.spec?`<p class="prod-spec-lbl">Especificação</p><p class="prod-spec">${esc(String(p.spec).replace(/\r\n?/g,'\n').trim())}</p>`:''}
+        ${p.spec?`<p class="prod-spec-lbl">Especificação</p><p class="prod-spec">${specHTML(p.spec)}</p>`:''}
         ${p.loja?`<div class="prod-store-chip"><span class="dot"></span> Sugestão: ${p.loja}</div>`:''}
         ${ mine
           ? `<div class="prod-tip" style="background:var(--pink-pale);border:1px solid var(--pink-soft);"><b>Este é o presente que você escolheu</b><br>Ele está guardado na sua sacola.</div>
@@ -334,7 +327,6 @@ function openBuyIntent(id){
   const p=productById(id); if(!p) return;
   pendingGift=id;
   $('#giftModalPreview2').innerHTML=`<div class="wl-thumb">${mediaHTML(p)}</div><div class="wl-info"><p class="wl-name">${p.nome}</p><p class="wl-price">${money(p.preco)} · ${p.loja}</p></div>`;
-  $('#intentEntrega').innerHTML = entregaHTML(p);
   const so=$('#intentSoLoja'); so.href=p.link||'#';
   showGiftStep('gstep-intent');
   $('#giftModalOverlay').classList.add('open');
@@ -396,9 +388,8 @@ function confirmGiftNow(id){
   updateBadges(); renderGrid();
   pendingGift=null;
   // FEEDBACK IMEDIATO (não espera o servidor — experiência rápida)
-  const comLoja = !!storeAfter, p=productById(id), loja=$('#doneLoja'), ent=$('#doneEntrega');
+  const comLoja = !!storeAfter, p=productById(id), loja=$('#doneLoja');
   if(loja){ loja.href = comLoja ? storeAfter : '#'; loja.style.display = comLoja ? '' : 'none'; }
-  if(ent) ent.innerHTML = (comLoja && p) ? entregaHTML(p) : '';
   storeAfter=null;
   if (primeiroPresente && !comLoja){ closeGiftModal(); unlockLevel('bronze'); }
   else {

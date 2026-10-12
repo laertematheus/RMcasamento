@@ -25,11 +25,10 @@ function getSheet_() {
 
 /* Descobre em qual coluna está cada informação, pelo texto do cabeçalho */
 function mapColunas_(headers) {
-  var m = { nome:-1, loja:-1, link:-1, preco:-1, img:-1, spec:-1, qtd:-1, fundo:-1, reservado:-1, entrega:-1, quem:-1 };
+  var m = { nome:-1, loja:-1, link:-1, preco:-1, img:-1, spec:-1, qtd:-1, fundo:-1, reservado:-1, quem:-1 };
   headers.forEach(function (h, i) {
     var t = String(h).toLowerCase();
     if (m.quem<0 && t.indexOf('quem escolheu')>=0) m.quem=i;                                  // nomes legíveis (escrito pelo script)
-    else if (m.entrega<0 && (t.indexOf('entrega')>=0 || t.indexOf('prazo')>=0)) m.entrega=i;   // "Entrega estimada" (dias)
     else if (m.nome<0 && (t.indexOf('título')>=0 || t.indexOf('titulo')>=0 || t.indexOf('presente')>=0 || t.indexOf('nome')>=0)) m.nome=i;
     else if (m.loja<0 && t.indexOf('loja')>=0) m.loja=i;
     else if (m.link<0 && t.indexOf('link')>=0) m.link=i;
@@ -113,8 +112,7 @@ function getProdutos_() {
       spec: map.spec>=0 ? String(row[map.spec]||'') : '',
       qtd: map.qtd>=0 ? String(row[map.qtd]||'1') : '1',
       fundo: map.fundo>=0 ? String(row[map.fundo]||'') : '',
-      reservado: map.reservado>=0 ? String(row[map.reservado]||'') : '',
-      entrega: map.entrega>=0 ? String(row[map.entrega]||'') : ''
+      reservado: map.reservado>=0 ? String(row[map.reservado]||'') : ''
     });
   }
   return out;
