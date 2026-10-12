@@ -25,10 +25,11 @@ function getSheet_() {
 
 /* Descobre em qual coluna está cada informação, pelo texto do cabeçalho */
 function mapColunas_(headers) {
-  var m = { nome:-1, loja:-1, link:-1, preco:-1, img:-1, spec:-1, qtd:-1, fundo:-1, reservado:-1, entrega:-1 };
+  var m = { nome:-1, loja:-1, link:-1, preco:-1, img:-1, spec:-1, qtd:-1, fundo:-1, reservado:-1, entrega:-1, quem:-1 };
   headers.forEach(function (h, i) {
     var t = String(h).toLowerCase();
-    if (m.entrega<0 && (t.indexOf('entrega')>=0 || t.indexOf('prazo')>=0)) m.entrega=i;   // "Entrega estimada" (dias)
+    if (m.quem<0 && t.indexOf('quem escolheu')>=0) m.quem=i;                                  // nomes legíveis (escrito pelo script)
+    else if (m.entrega<0 && (t.indexOf('entrega')>=0 || t.indexOf('prazo')>=0)) m.entrega=i;   // "Entrega estimada" (dias)
     else if (m.nome<0 && (t.indexOf('título')>=0 || t.indexOf('titulo')>=0 || t.indexOf('presente')>=0 || t.indexOf('nome')>=0)) m.nome=i;
     else if (m.loja<0 && t.indexOf('loja')>=0) m.loja=i;
     else if (m.link<0 && t.indexOf('link')>=0) m.link=i;
@@ -215,6 +216,21 @@ function anotaPresentes_(sheet, map, colReservado, quem, aba){
     csh.getRange(Number(m[1]), CV.presente+1).setValue(nomes.join(', '));
   }catch(err){}
 }
+/* coluna "Quem escolheu" na aba dos PRESENTES: troca os códigos (fam2, g8x...) pelo nome da família.
+   Criada sozinha no fim da planilha na 1ª reserva. */
+function anotaQuemEscolheu_(sheet, map, row, lista, aba){
+  try{
+    var col = map.quem;
+    if (col < 0){ col = sheet.getLastColumn(); sheet.getRange(1, col+1).setValue('Quem escolheu'); map.quem = col; }
+    var csh = convSheet_(aba), cvals = csh ? csh.getDataRange().getValues() : [];
+    var nomes = lista.map(function(k){
+      var m = String(k).match(/^fam(\d+)$/);
+      if (m && cvals[Number(m[1])-1]) return String(cvals[Number(m[1])-1][CV.familia] || cvals[Number(m[1])-1][CV.nome]);
+      return 'sem identificação';
+    });
+    sheet.getRange(row, col+1).setValue(nomes.join(' | '));
+  }catch(err){}
+}
 
 /* ─────────── SITE PEDE A LISTA / IDENTIFICA CONVIDADO ─────────── */
 function doGet(e) {
@@ -269,6 +285,7 @@ function doPost(e) {
       list.push(quem);
       sheet.getRange(row, colReservado).setValue(list.join(','));
       anotaPresentes_(sheet, map, colReservado, quem, body.aba);
+      anotaQuemEscolheu_(sheet, map, row, list, body.aba);
       return json_({ ok:true, reservado:list.join(','), restam: Math.max(0, qtd - list.length) });
 
     } else if (body.action === 'cancelar') {
@@ -276,6 +293,7 @@ function doPost(e) {
       list2 = list2.filter(function (t) { return t !== quem; });     // tira só a minha unidade
       sheet.getRange(row, colReservado).setValue(list2.join(','));
       anotaPresentes_(sheet, map, colReservado, quem, body.aba);
+      anotaQuemEscolheu_(sheet, map, row, list2, body.aba);
       return json_({ ok:true, reservado:list2.join(',') });
     }
     return json_({ ok:false, reason:'acao' });
