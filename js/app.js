@@ -275,7 +275,7 @@ function renderProduct(id){
         ${p.loja?`<div class="prod-store-chip"><span class="dot"></span> Sugestão: ${p.loja}</div>`:''}
         ${ mine
           ? `<div class="prod-tip" style="background:var(--pink-pale);border:1px solid var(--pink-soft);"><b>Este é o presente que você escolheu</b><br>Ele está guardado na sua sacola.</div>
-             <button class="prod-cancel" onclick="cancelGift('${p.id}')">Cancelar presente</button>`
+             <button class="prod-cancel" onclick="askCancel('${p.id}')">Cancelar presente</button>`
           : taken
           ? `<div class="prod-tip"><b>Presente esgotado</b> — já foi escolhido pelos convidados.<br>Que tal escolher outro?</div>`
           : `${ !levels['bronze'] ? `<div class="prod-incentivo"><img class="pi-selo" src="selo_bronze.png?v=2" alt="Selo Bronze"><div>Escolha este presente e <b>ganhe o selo de Bronze</b></div></div>` : '' }
@@ -341,11 +341,11 @@ function openBuyIntent(id){
 }
 function intentSim(){ const p=productById(pendingGift); storeAfter = p ? (p.link||null) : null; confirmGift(); }
 // "Não, só quero ver na loja": o <a> abre a loja (gesto do clique = não é bloqueado); ao voltar perguntamos de novo
-function intentSoLoja(){ const id=pendingGift; $('#giftModalOverlay').classList.remove('open'); pendingGift=id; }
+function intentSoLoja(){ $('#giftModalOverlay').classList.remove('open'); pendingGift=null; }
 // contingência manual: "Já comprei este item" -> abre o modal de confirmação na hora
 function manualBuy(id){ pendingGift=id; askGiftConfirm(); }
 function onReturnToSite(){
-  if(pendingGift) setTimeout(askGiftConfirm,350);
+  // (sem modal na volta da loja — quem comprou usa o botão "Já comprei este item")
   if(pendingCal){ pendingCal=false; setTimeout(()=>unlockLevel('ferro'),500); }
 }
 window.addEventListener('focus', onReturnToSite);
@@ -414,6 +414,16 @@ function confirmGiftNow(id){
     }
   }).catch(()=>{});
 }
+/* cancelar pede confirmação (evita perder a reserva num clique sem querer) */
+let cancelando=null;
+function askCancel(id){
+  const p=productById(id); if(!p) return;
+  cancelando=id;
+  $('#cancelPreview').innerHTML=`<div class="wl-thumb">${mediaHTML(p)}</div><div class="wl-info"><p class="wl-name">${p.nome}</p><p class="wl-price">${money(p.preco)} · ${p.loja}</p></div>`;
+  showGiftStep('gstep-cancel');
+  $('#giftModalOverlay').classList.add('open');
+}
+function confirmCancel(){ const id=cancelando; cancelando=null; closeGiftModal(); if(id) cancelGift(id); }
 function cancelGift(id){
   setReservedNow(id, false);         // remove na hora (sem esperar a planilha)
   reserveWrite(id, 'cancelar');      // sincroniza servidor em segundo plano (liberar é de baixo risco)
@@ -442,7 +452,7 @@ async function reserveWrite(id, acao){
     return { ok:true };
   }
   try{
-    const r = await fetch(PRODUTOS_URL, { method:'POST', body: JSON.stringify({ action:acao, id:id, quem:guestKey() }) });
+    const r = await fetch(PRODUTOS_URL, { method:'POST', body: JSON.stringify({ action:acao, id:id, quem:guestKey(), aba:ABA_CONVIDADOS }) });  // aba: p/ anotar o nome do presente na lista de convidados
     const data = await r.json().catch(()=>null);
     if (data && typeof data.reservado === 'string'){    // sincroniza o estado real que o servidor devolveu
       const p=productById(id); if(p) p.reservado=data.reservado;
@@ -603,7 +613,7 @@ function renderDrawer(){
       ${gifts.map(p=>`<div class="bag-card">
         <div class="wl-thumb">${mediaHTML(p)}</div>
         <div class="wl-info"><span class="bag-tag">Presente reservado</span><p class="wl-name">${p.nome}</p><p class="wl-price">${money(p.preco)} · ${p.loja}</p></div>
-        <button class="wl-remove" title="Cancelar presente" onclick="cancelGift('${p.id}')">✕</button>
+        <button class="wl-remove" title="Cancelar presente" onclick="askCancel('${p.id}')">✕</button>
       </div>`).join('')}
       <button class="btn-mini ghost" style="margin-top:16px;" onclick="closeDrawer();go('presentes')"><svg viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg> Adicionar mais presentes</button>
       <p class="modal-nota" style="text-align:center;">Você pode reservar quantos quiser. Cancelar devolve o item à lista.</p>
@@ -723,8 +733,8 @@ function addCalendar(){
     const g='https://calendar.google.com/calendar/render?action=TEMPLATE'
       +'&text='+encodeURIComponent('Casamento Matheus e Rafa - Almoço 13h')
       +'&dates=20261114T160000Z/20261114T190000Z'
-      +'&details='+encodeURIComponent('Casamento no civil e Chá de Cama e Banho de Matheus e Rafaella. Almoço às 13h. Te esperamos!')
-      +'&location='+encodeURIComponent('Salão de festas Espaço Family - Av. Bartolomeu de Carlos, 675 - Jardim Flor da Montanha, Guarulhos - SP, 07097-420')
+      +'&details='+encodeURIComponent('Casamento no civil e Chá de Cama e Banho de Matheus e Rafaella. Almoço às 13h no Salão de Festas Espaço Family. Te esperamos! 👰🤵❤️')
+      +'&location='+encodeURIComponent('Av. Bartolomeu de Carlos, 675 - Jardim Flor da Montanha, Guarulhos - SP, 07097-420, Brasil')
       +'&ctz=America/Sao_Paulo';
     window.open(g,'_blank','noopener');
   }
@@ -786,7 +796,7 @@ function showFamiliaPicker(matches){
 }
 async function pickFamilia(row, nome){ await setFamilia(row, nome); }
 function applyState_(d){
-  if(Array.isArray(d.desejos)){ wishlist = d.desejos.slice(); save('mr_wishlist', wishlist); }
+  if(Array.isArray(d.desejos) && (d.desejos.length || !wishlist.length)){ wishlist = d.desejos.slice(); save('mr_wishlist', wishlist); }
   if(d.niveis && typeof d.niveis==='object'){ levels = Object.assign({}, d.niveis); save('mr_levels', levels); }
 }
 /* aplica a identidade (sem tocar na UI do modal) */
