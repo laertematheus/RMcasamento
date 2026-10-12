@@ -789,8 +789,12 @@ function showFamiliaPicker(matches){
   $('#idFamEyebrow').textContent = um ? 'Confirme sua família' : 'Encontramos mais de um';
   $('#idFamTitle').innerHTML = um ? 'É você que está<br>nesta família?' : 'Qual é a sua família?';
   $('#idFamiliaList').innerHTML = matches.map(m=>{
-    const membros = (m.membros && m.membros.length) ? m.membros.join(' · ') : '';
-    return `<button class="id-fam-btn" onclick="pickFamilia(${m.row}, '${esc(m.familia)}')"><b>${m.familia||'Família'}</b>${membros && membros!==m.familia ? `<small>${membros}</small>` : ''}</button>`;
+    // só mostra a linha de membros se ela ACRESCENTA algo (ex: família "Família Silva"); se o nome da família já lista todos, não repete
+    const norm = s => String(s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+    const rotulo = norm(m.familia);
+    const extra = (m.membros||[]).some(n => rotulo.indexOf(norm(n).split(' ')[0]) < 0);
+    const membros = extra ? m.membros.join(' · ') : '';
+    return `<button class="id-fam-btn" onclick="pickFamilia(${m.row}, '${esc(m.familia)}')"><b>${m.familia||'Família'}</b>${membros ? `<small>${membros}</small>` : ''}</button>`;
   }).join('') + `<button class="modal-btn-no" style="margin-top:6px;" onclick="idStep('id-step-nome')">${um ? 'Não sou eu' : 'Nenhuma dessas'} — tentar outro nome</button>`;
   idStep('id-step-familia');
 }

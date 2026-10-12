@@ -825,3 +825,5 @@ a.modal-btn-yes, a.modal-btn-no{ display:block; text-align:center; text-decorati
 .id-fam-btn b{ display:block; font-weight:600; }
 .id-fam-btn small{ display:block; margin-top:3px; font-size:12.5px; color:var(--ink-3,#777); }
 .id-fam-btn + .id-fam-btn{ margin-top:8px; }
+.id-fam-btn{ font-family:inherit; }
+.id-fam-btn b{ font-weight:600; }
