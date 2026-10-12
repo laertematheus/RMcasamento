@@ -25,10 +25,11 @@ function getSheet_() {
 
 /* Descobre em qual coluna está cada informação, pelo texto do cabeçalho */
 function mapColunas_(headers) {
-  var m = { nome:-1, loja:-1, link:-1, preco:-1, img:-1, spec:-1, qtd:-1, fundo:-1, reservado:-1 };
+  var m = { nome:-1, loja:-1, link:-1, preco:-1, img:-1, spec:-1, qtd:-1, fundo:-1, reservado:-1, entrega:-1 };
   headers.forEach(function (h, i) {
     var t = String(h).toLowerCase();
-    if (m.nome<0 && (t.indexOf('título')>=0 || t.indexOf('titulo')>=0 || t.indexOf('presente')>=0 || t.indexOf('nome')>=0)) m.nome=i;
+    if (m.entrega<0 && (t.indexOf('entrega')>=0 || t.indexOf('prazo')>=0)) m.entrega=i;   // "Entrega estimada" (dias)
+    else if (m.nome<0 && (t.indexOf('título')>=0 || t.indexOf('titulo')>=0 || t.indexOf('presente')>=0 || t.indexOf('nome')>=0)) m.nome=i;
     else if (m.loja<0 && t.indexOf('loja')>=0) m.loja=i;
     else if (m.link<0 && t.indexOf('link')>=0) m.link=i;
     else if (m.preco<0 && (t.indexOf('preço')>=0 || t.indexOf('preco')>=0 || t.indexOf('valor')>=0)) m.preco=i;
@@ -111,7 +112,8 @@ function getProdutos_() {
       spec: map.spec>=0 ? String(row[map.spec]||'') : '',
       qtd: map.qtd>=0 ? String(row[map.qtd]||'1') : '1',
       fundo: map.fundo>=0 ? String(row[map.fundo]||'') : '',
-      reservado: map.reservado>=0 ? String(row[map.reservado]||'') : ''
+      reservado: map.reservado>=0 ? String(row[map.reservado]||'') : '',
+      entrega: map.entrega>=0 ? String(row[map.entrega]||'') : ''
     });
   }
   return out;
@@ -139,28 +141,51 @@ function linhaCanonica_(vals, fam){
   for(var i=1;i<vals.length;i++){ if(String(vals[i][CV.familia])===fam) return i+1; }
   return -1;
 }
-/* busca o nome (em Nome OU Apelidos) e devolve as familias que batem */
+/* palavras que NÃO identificam ninguém (ignoradas na busca) */
+var STOP_ = { 'familia':1,'e':1,'de':1,'da':1,'do':1,'das':1,'dos':1,'a':1,'o':1,'filhos':1,'filho':1,'filha':1,'filhas':1 };
+/* todas as palavras de uma linha: Nome + Apelidos + Familia (ex: "Késia, Samuel" acha o Samuel) */
+function palavrasLinha_(r){
+  var txt = [r[CV.nome], r[CV.apelidos], r[CV.familia]].map(normNome_).join(' ');
+  return txt.split(/[^a-z0-9]+/).filter(function(w){ return w && !STOP_[w]; });
+}
+/* distância de edição <= 1 (perdoa 1 letra: Ludmilla x Ludmila, Kesia x Kezia) */
+function quase_(a, b){
+  if (a === b) return true;
+  if (Math.abs(a.length - b.length) > 1 || a.length < 4 || b.length < 4) return false;
+  var i = 0, j = 0, dif = 0;
+  while (i < a.length && j < b.length){
+    if (a[i] === b[j]){ i++; j++; continue; }
+    if (++dif > 1) return false;
+    if (a.length > b.length) i++; else if (b.length > a.length) j++; else { i++; j++; }
+  }
+  return dif + (a.length - i) + (b.length - j) <= 1;
+}
+/* busca o nome (em Nome, Apelidos OU Familia) e devolve as familias que batem.
+   1º tenta exato; se nada bater, tenta com tolerância de 1 letra. */
 function identificar_(nome, aba){
   var sh = convSheet_(aba);
   if(!sh) return { found:false, matches:[] };
-  var tokens = normNome_(nome).split(' ').filter(String);
+  var tokens = normNome_(nome).split(/[^a-z0-9]+/).filter(function(w){ return w && !STOP_[w]; });
   if(!tokens.length) return { found:false, matches:[] };
   var vals = sh.getDataRange().getValues();
-  var matches = [], vistos = {};
-  for(var i=1;i<vals.length;i++){
-    var todos = [normNome_(vals[i][CV.nome])].concat(String(vals[i][CV.apelidos]||'').split(',').map(normNome_)).filter(String);
-    var bate = false;
-    for(var t=0;t<tokens.length;t++){ if(todos.indexOf(tokens[t])>=0){ bate=true; break; } }
-    if(bate){
-      var fam = String(vals[i][CV.familia]||('linha '+(i+1)));
-      if(!vistos[fam]){
-        vistos[fam]=true;
-        var canon = linhaCanonica_(vals, String(vals[i][CV.familia])); if(canon<2) canon=i+1;
-        matches.push({ row:canon, familia:fam });
-      }
+  function busca(cmp){
+    var matches = [], vistos = {};
+    for(var i=1;i<vals.length;i++){
+      var ws = palavrasLinha_(vals[i]); if(!ws.length) continue;
+      var bate = tokens.some(function(t){ return ws.some(function(w){ return cmp(t, w); }); });
+      if(!bate) continue;
+      var famTxt = String(vals[i][CV.familia]||'');
+      var fam = famTxt || String(vals[i][CV.nome]||('linha '+(i+1)));
+      if(vistos[fam]) continue;
+      vistos[fam] = true;
+      var canon = famTxt ? linhaCanonica_(vals, famTxt) : -1; if(canon<2) canon=i+1;
+      matches.push({ row:canon, familia:fam });
     }
+    return matches;
   }
-  return { found:matches.length>0, matches:matches };
+  var m = busca(function(a,b){ return a===b; });
+  if(!m.length) m = busca(quase_);
+  return { found:m.length>0, matches:m };
 }
 /* estado (desejos/niveis) de uma familia, pela linha canonica */
 function estadoConvidado_(row, aba){

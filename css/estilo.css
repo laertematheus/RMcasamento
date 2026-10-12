@@ -808,3 +808,16 @@ body.intro-lock{ overflow:hidden; }
    REVISÃO 17 — mobile: inputs 16px (impede o zoom automático do iOS)
    ═══════════════════════════════════════════════════════════════ */
 .modal-input, input, textarea, select{ font-size:16px !important; }
+
+/* ═══ REVISÃO 18 — quebra de linha na descrição, prazo de entrega, modal "esse vai ser seu presente?", pós-evento ═══ */
+.prod-spec{ white-space:pre-line; }
+button.prod-buy{ font-family:'Jost',sans-serif; }
+a.modal-btn-yes, a.modal-btn-no{ display:block; text-align:center; text-decoration:none; box-sizing:border-box; }
+.prod-entrega{ display:flex; gap:10px; align-items:flex-start; font-size:13.5px; line-height:1.5; color:var(--ink); background:var(--surface-2,#f4f1f3); border:1px solid var(--line); border-radius:var(--r-md,10px); padding:10px 14px; margin:0 0 18px; text-align:left; }
+.prod-entrega b{ font-weight:700; }
+.pe-ico{ flex:none; }
+#intentEntrega .prod-entrega, #doneEntrega .prod-entrega{ margin:0 0 16px; font-size:12.5px; }
+#doneEntrega .prod-entrega{ margin-top:14px; }
+.gift-entrega{ display:inline-block; margin-top:6px; font-size:11px; color:var(--ink-3,#777); }
+.prog-passou{ display:block; font-size:12px; color:var(--ink-3,#777); font-style:italic; margin:2px 0 6px; }
+.tl-passou{ cursor:default; opacity:.7; }
