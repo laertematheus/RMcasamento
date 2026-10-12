@@ -574,7 +574,7 @@ function resgatar(key){ if(fase1Passou()) unlockLevel(key); }
 /* botão "Fazer agora" da barra de progresso -> leva para onde a ação acontece */
 function progAction(key){
   if(key==='bronze') go('presentes');
-  else if(key==='ferro'){ go(''); setTimeout(()=>document.querySelector('.tl-sec')?.scrollIntoView({behavior:'smooth'}),150); }
+  else if(key==='ferro') addCalendar();   // direto pra agenda; ao voltar ganha o selo Ferro
 }
 
 /* ════════════════════════════════════════════════════════════
@@ -724,7 +724,7 @@ function addCalendar(){
       +'&text='+encodeURIComponent('Casamento Matheus e Rafa - Almoço 13h')
       +'&dates=20261114T160000Z/20261114T190000Z'
       +'&details='+encodeURIComponent('Casamento no civil e Chá de Cama e Banho de Matheus e Rafaella. Almoço às 13h. Te esperamos!')
-      +'&location='+encodeURIComponent('Rua Frei Bartolomeu Pilar, 191 - Vila Constança, São Paulo - SP')
+      +'&location='+encodeURIComponent('Salão de festas Espaço Family - Av. Bartolomeu de Carlos, 675 - Jardim Flor da Montanha, Guarulhos - SP, 07097-420')
       +'&ctz=America/Sao_Paulo';
     window.open(g,'_blank','noopener');
   }
@@ -768,15 +768,20 @@ async function idBuscar(){
     const d=await res.json();
     const matches = (d && d.matches) ? d.matches : [];
     if(!matches.length){ if(err){ err.textContent='Não encontramos seu nome na lista. Confira ou fale com os noivos.'; err.style.display='block'; } }
-    else if(matches.length===1){ await setFamilia(matches[0].row, matches[0].familia); }
-    else { showFamiliaPicker(matches); }
+    else { showFamiliaPicker(matches); }   // SEMPRE confirma a família (2 Vitors, 2 Isas -> ninguém entra na família errada)
   }catch(e){ if(err){ err.textContent = (e && e.name==='AbortError') ? 'Está demorando demais. Verifique se o script foi republicado e tente de novo.' : 'Erro de conexão. Tente de novo em instantes.'; err.style.display='block'; } }
   finally { clearTimeout(to); }
   b.disabled=false; b.textContent='Continuar →';
 }
 function showFamiliaPicker(matches){
   const esc = s => String(s||'').replace(/'/g,"\\'").replace(/"/g,'&quot;');
-  $('#idFamiliaList').innerHTML = matches.map(m=>`<button class="id-fam-btn" onclick="pickFamilia(${m.row}, '${esc(m.familia)}')">${m.familia||'Família'}</button>`).join('');
+  const um = matches.length===1;
+  $('#idFamEyebrow').textContent = um ? 'Confirme sua família' : 'Encontramos mais de um';
+  $('#idFamTitle').innerHTML = um ? 'É você que está<br>nesta família?' : 'Qual é a sua família?';
+  $('#idFamiliaList').innerHTML = matches.map(m=>{
+    const membros = (m.membros && m.membros.length) ? m.membros.join(' · ') : '';
+    return `<button class="id-fam-btn" onclick="pickFamilia(${m.row}, '${esc(m.familia)}')"><b>${m.familia||'Família'}</b>${membros && membros!==m.familia ? `<small>${membros}</small>` : ''}</button>`;
+  }).join('') + `<button class="modal-btn-no" style="margin-top:6px;" onclick="idStep('id-step-nome')">${um ? 'Não sou eu' : 'Nenhuma dessas'} — tentar outro nome</button>`;
   idStep('id-step-familia');
 }
 async function pickFamilia(row, nome){ await setFamilia(row, nome); }
