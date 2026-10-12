@@ -179,7 +179,12 @@ function identificar_(nome, aba){
       if(vistos[fam]) continue;
       vistos[fam] = true;
       var canon = famTxt ? linhaCanonica_(vals, famTxt) : -1; if(canon<2) canon=i+1;
-      matches.push({ row:canon, familia:fam });
+      var membros = [];   // nomes de quem está nessa família (pra pessoa reconhecer a dela)
+      for(var k=1;k<vals.length;k++){
+        var mesma = famTxt ? String(vals[k][CV.familia]||'')===famTxt : k===i;
+        if(mesma && String(vals[k][CV.nome]||'').trim()) membros.push(String(vals[k][CV.nome]).trim());
+      }
+      matches.push({ row:canon, familia:fam, membros:membros });
     }
     return matches;
   }
