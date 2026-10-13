@@ -238,7 +238,7 @@ function renderGrid(){
   const esg  = PRODUCTS.filter(p=> isTaken(p)).sort(byPrice); // esgotados (pela galera)
   let html = disp.map(giftCardHTML).join('');
   if (esg.length){
-    html += `<div class="gift-divider"><span>Já reservados</span><small>${esg.length} presente${esg.length>1?'s':''} que a galera já escolheu</small></div>`;
+    html += `<div class="gift-divider"><span>Já reservados</span><small>${esg.length} presente${esg.length>1?'s':''} já escolhido${esg.length>1?'s':''}</small></div>`;
     html += esg.map(giftCardHTML).join('');
   }
   grid.innerHTML = html;
