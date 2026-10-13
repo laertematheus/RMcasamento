@@ -238,7 +238,8 @@ function renderGrid(){
   const esg  = PRODUCTS.filter(p=> isTaken(p)).sort(byPrice); // esgotados (pela galera)
   let html = disp.map(giftCardHTML).join('');
   if (esg.length){
-    html += `<div class="gift-divider"><span>Já reservados</span><small>${esg.length} ${esg.length>1?'itens esgotados':'item esgotado'}</small></div>`;
+    const escolhidos = PRODUCTS.filter(p=>reservedCount(p)>0).length;   // itens com pelo menos 1 reserva (inclui os que ainda têm unidade livre)
+    html += `<div class="gift-divider"><span>Já reservados</span><small>${escolhidos} ${escolhidos>1?'itens já escolhidos':'item já escolhido'}</small></div>`;
     html += esg.map(giftCardHTML).join('');
   }
   grid.innerHTML = html;
