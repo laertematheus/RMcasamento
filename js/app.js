@@ -52,7 +52,10 @@ function localMode(){ return !SERVER_ON || usingExamples; }  // reservas ficam l
    FAMÍLIA e fica salvo no servidor -> aparece em qualquer aparelho. Sem login,
    segue anônimo (por aparelho), igual antes. */
 let familia = load('mr_familia', null);         // { id, nome } ou null
-function guestKey(){ return familia ? ('fam'+familia.id) : guestToken; }  // chave usada nas reservas
+// se o servidor demorar no login, a pessoa reserva com o NOME DIGITADO (chave "n:Nome") — o site nunca trava
+let nomeLivre = load('mr_nomeLivre', null);
+function guestKey(){ return familia ? ('fam'+familia.id) : (nomeLivre ? 'n:'+nomeLivre : guestToken); }  // chave usada nas reservas
+function minhasChaves(){ const k=[guestKey(), guestToken]; if(nomeLivre) k.push('n:'+nomeLivre); return k; }  // tudo que já reservei neste aparelho
 function logado(){ return !!familia; }
 
 const $ = s => document.querySelector(s);
@@ -69,7 +72,8 @@ function reservedList(p){
 }
 function reservedCount(p){ return reservedList(p).length; }
 function available(p){ return Math.max(0, qtyTotal(p) - reservedCount(p)); }
-function isMine(p){ return reservedList(p).indexOf(guestKey()) >= 0; }
+function chaveMinha(p){ const m=minhasChaves(); return reservedList(p).find(k=>m.indexOf(k)>=0) || null; }
+function isMine(p){ return !!chaveMinha(p); }
 function isTaken(p){ return !isMine(p) && available(p) <= 0; } // esgotado (para todos)
 function myGift(){ return PRODUCTS.find(p => isMine(p)) || null; }
 function myGifts(){ return PRODUCTS.filter(p => isMine(p)); }
@@ -397,6 +401,7 @@ function confirmGiftNow(id){
   const primeiroPresente = !levels['bronze'];   // 1º presente desbloqueia o nível Bronze
   setReservedNow(id, true);                      // reserva OTIMISTA
   updateBadges(); renderGrid();
+  if(location.hash.includes('produto/')) renderProduct(id);   // a página do produto já mostra "você escolheu" + link da loja
   pendingGift=null;
   // FEEDBACK IMEDIATO (não espera o servidor — experiência rápida)
   const comLoja = !!storeAfter, p=productById(id), loja=$('#doneLoja');
@@ -427,8 +432,9 @@ function askCancel(id){
 }
 function confirmCancel(){ const id=cancelando; cancelando=null; closeGiftModal(); if(id) cancelGift(id); }
 function cancelGift(id){
+  const p0=productById(id), chave = p0 ? chaveMinha(p0) : null;   // cancela a chave com que EU reservei (família, nome ou anônimo)
   setReservedNow(id, false);         // remove na hora (sem esperar a planilha)
-  reserveWrite(id, 'cancelar');      // sincroniza servidor em segundo plano (liberar é de baixo risco)
+  reserveWrite(id, 'cancelar', chave);      // sincroniza servidor em segundo plano (liberar é de baixo risco)
   updateBadges(); renderGrid(); renderDrawer();
   if (location.hash.includes('produto/')) renderProduct(id);
 }
@@ -438,7 +444,7 @@ function setReservedNow(id, mine){
   if(!localMode()){                                     // modo servidor: mexe só na MINHA presença na lista
     let list = reservedList(p);
     if(mine){ if(list.indexOf(guestKey())<0) list.push(guestKey()); }
-    else    { list = list.filter(t=>t!==guestKey()); }
+    else    { const m=minhasChaves(); list = list.filter(t=>m.indexOf(t)<0); }
     p.reservado = list.join(',');
   }
   if(mine) localReserved[id]=guestKey(); else delete localReserved[id];  // modo exemplo (1 aparelho)
@@ -447,14 +453,14 @@ function setReservedNow(id, mine){
 /* grava a reserva no servidor e devolve a resposta ({ok, reservado, restam}).
    No modo exemplo (planilha vazia) resolve local. Se a rede cair, mantém o
    otimista (a trava do servidor ainda protege — o convidado pode tentar de novo). */
-async function reserveWrite(id, acao){
+async function reserveWrite(id, acao, chave){
   if (localMode()){
     if (acao==='reservar') localReserved[id]=guestKey(); else delete localReserved[id];
     save('mr_localReserved', localReserved);
     return { ok:true };
   }
   try{
-    const r = await fetch(PRODUTOS_URL, { method:'POST', body: JSON.stringify({ action:acao, id:id, quem:guestKey(), aba:ABA_CONVIDADOS }) });  // aba: p/ anotar o nome do presente na lista de convidados
+    const r = await fetch(PRODUTOS_URL, { method:'POST', body: JSON.stringify({ action:acao, id:id, quem:(chave||guestKey()), aba:ABA_CONVIDADOS }) });  // aba: p/ anotar o nome do presente na lista de convidados
     const data = await r.json().catch(()=>null);
     if (data && typeof data.reservado === 'string'){    // sincroniza o estado real que o servidor devolveu
       const p=productById(id); if(p) p.reservado=data.reservado;
@@ -776,20 +782,35 @@ async function idBuscar(){
   if(err) err.style.display='none';
   b.disabled=true; b.textContent='Buscando...';
   const lento = setTimeout(()=>{ b.textContent='Quase lá...'; }, 6000);
-  // até 2 tentativas de 20s (a 1ª chamada do Apps Script pode ser lenta)
+  // reservando: espera no máx 10s e, se o servidor demorar, reserva com o NOME DIGITADO (o site nunca parece quebrado).
+  // só entrando (sem reserva): até 2 tentativas de 20s.
+  const reservando = !!idAfter;
   const tentar = async ()=>{
-    const ctrl = new AbortController(); const to = setTimeout(()=>ctrl.abort(), 20000);
+    const ctrl = new AbortController(); const to = setTimeout(()=>ctrl.abort(), reservando ? 10000 : 20000);
     try{ const res=await fetch(`${PRODUTOS_URL}?acao=identificar&nome=${encodeURIComponent(raw)}&aba=${encodeURIComponent(ABA_CONVIDADOS)}`, { signal: ctrl.signal }); return await res.json(); }
     finally{ clearTimeout(to); }
   };
   try{
-    let d; try{ d = await tentar(); }catch(e1){ b.textContent='Tentando de novo...'; d = await tentar(); }
+    let d;
+    try{ d = await tentar(); }
+    catch(e1){
+      if (reservando){ reservarComNomeDigitado(raw); return; }
+      b.textContent='Tentando de novo...'; d = await tentar();
+    }
     const matches = (d && d.matches) ? d.matches : [];
     if(!matches.length){ if(err){ err.textContent='Não encontramos seu nome na lista. Confira ou fale com os noivos.'; err.style.display='block'; } }
     else { showFamiliaPicker(matches); }   // SEMPRE confirma a família (2 Vitors, 2 Isas -> ninguém entra na família errada)
   }catch(e){ if(err){ err.textContent='A conexão está lenta agora. Toque em Continuar para tentar de novo — ou use "Reservar sem entrar".'; err.style.display='block'; } }
   finally { clearTimeout(lento); }
   b.disabled=false; b.textContent='Continuar →';
+}
+/* plano B: servidor lento -> reserva no nome que a pessoa digitou (aparece "n:Nome" na coluna Reservado) */
+function reservarComNomeDigitado(raw){
+  nomeLivre = String(raw).replace(/[,;]/g,' ').replace(/\s+/g,' ').trim().slice(0,40);
+  save('mr_nomeLivre', nomeLivre);
+  const cb=idAfter; idAfter=null; idSkip=null;
+  const b=$('#idBuscar'); if(b){ b.disabled=false; b.textContent='Continuar →'; }
+  closeId(); if(cb) setTimeout(cb, 150);
 }
 function showFamiliaPicker(matches){
   const esc = s => String(s||'').replace(/'/g,"\\'").replace(/"/g,'&quot;');
