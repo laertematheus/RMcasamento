@@ -224,6 +224,7 @@ function anotaQuemEscolheu_(sheet, map, row, lista, aba){
     var nomes = lista.map(function(k){
       var m = String(k).match(/^fam(\d+)$/);
       if (m && cvals[Number(m[1])-1]) return String(cvals[Number(m[1])-1][CV.familia] || cvals[Number(m[1])-1][CV.nome]);
+      if (String(k).indexOf('n:') === 0) return String(k).slice(2) + ' (nome digitado)';   // servidor estava lento no login
       return 'sem identificação';
     });
     sheet.getRange(row, col+1).setValue(nomes.join(' | '));
