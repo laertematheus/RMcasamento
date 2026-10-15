@@ -25,10 +25,11 @@ function getSheet_() {
 
 /* Descobre em qual coluna está cada informação, pelo texto do cabeçalho */
 function mapColunas_(headers) {
-  var m = { nome:-1, loja:-1, link:-1, preco:-1, img:-1, spec:-1, qtd:-1, fundo:-1, reservado:-1, quem:-1 };
+  var m = { nome:-1, loja:-1, link:-1, preco:-1, img:-1, spec:-1, qtd:-1, fundo:-1, reservado:-1, quem:-1, prob:-1 };
   headers.forEach(function (h, i) {
     var t = String(h).toLowerCase();
-    if (m.quem<0 && t.indexOf('quem escolheu')>=0) m.quem=i;                                  // nomes legíveis (escrito pelo script)
+    if (m.quem<0 && t.indexOf('quem escolheu')>=0) m.quem=i;
+    else if (m.prob<0 && t.indexOf('problema')>=0) m.prob=i;                                   // "Link com problema" (avisado pelo convidado)                                  // nomes legíveis (escrito pelo script)
     else if (m.nome<0 && (t.indexOf('título')>=0 || t.indexOf('titulo')>=0 || t.indexOf('presente')>=0 || t.indexOf('nome')>=0)) m.nome=i;
     else if (m.loja<0 && t.indexOf('loja')>=0) m.loja=i;
     else if (m.link<0 && t.indexOf('link')>=0) m.link=i;
@@ -266,6 +267,18 @@ function doPost(e) {
     var sheet = getSheet_();
     var headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
     var map = mapColunas_(headers);
+
+    // convidado avisou que o link da loja está com problema -> marca a data na coluna "Link com problema"
+    if (body.acao === 'linkProblema') {
+      var prow = Number(body.id);
+      if (prow >= 2) {
+        var pcol = map.prob;
+        if (pcol < 0) { pcol = sheet.getLastColumn(); sheet.getRange(1, pcol+1).setValue('Link com problema'); }
+        var quando = Utilities.formatDate(new Date(), 'America/Sao_Paulo', 'dd/MM HH:mm');
+        sheet.getRange(prow, pcol+1).setValue('⚠️ avisado em ' + quando);
+      }
+      return json_({ ok:true });
+    }
     var colReservado = garanteColunaReservado_(sheet, headers, map) + 1; // 1-based
     var row = Number(body.id);
     if (!row || row < 2) return json_({ ok:false, reason:'id' });

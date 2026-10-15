@@ -293,8 +293,22 @@ function renderProduct(id){
              </button>
              <button class="prod-bought" onclick="manualBuy('${p.id}')">Já comprei este item ✓</button>
              <div class="prod-tip">Você pode comprar este item <b>na loja que preferir</b>. Vale buscar cupons e promoções — e usar o <b>Méliuz</b> para ganhar cashback.</div>` }
+        ${ !taken ? linkProblemaHTML(p) : '' }
       </div>
     </div>`;
+}
+
+/* "Link com problema?" — o convidado avisa e a planilha marca a data na coluna "Link com problema" */
+let linksAvisados = load('mr_linkAvisado', {});
+function linkProblemaHTML(p){
+  return `<div class="link-prob" id="linkProb">${ linksAvisados[p.id]
+    ? `<p class="link-prob-ok">✓ Avisamos os noivos! Você pode comprar o mesmo item em outra loja de sua preferência.</p>`
+    : `<button class="link-prob-btn" onclick="avisarLink('${p.id}')">Link com problema?</button>` }</div>`;
+}
+function avisarLink(id){
+  linksAvisados[id]=true; save('mr_linkAvisado', linksAvisados);
+  const el=$('#linkProb'); if(el) el.innerHTML=`<p class="link-prob-ok">✓ Avisamos os noivos! Você pode comprar o mesmo item em outra loja de sua preferência.</p>`;
+  if(SERVER_ON && !localMode()) fetch(PRODUTOS_URL, { method:'POST', body: JSON.stringify({ acao:'linkProblema', id:id }) }).catch(()=>{});
 }
 
 /* ════════════════════════════════════════════════════════════
@@ -368,7 +382,7 @@ function askGiftConfirm(){
   $('#giftModalOverlay').classList.add('open');
 }
 function showGiftStep(id){ document.querySelectorAll('#giftModalOverlay .modal-step').forEach(s=>s.classList.remove('active')); $('#'+id).classList.add('active'); }
-function closeGiftModal(){ $('#giftModalOverlay').classList.remove('open'); pendingGift=null; }
+function closeGiftModal(){ $('#giftModalOverlay').classList.remove('open'); pendingGift=null; if(familiaDepois){ const m=familiaDepois; familiaDepois=null; setTimeout(()=>confirmarFamiliaDepois(m), 400); } }
 
 function confirmGift(){
   const id=pendingGift; if(!id) return;
@@ -785,18 +799,33 @@ async function idBuscar(){
   // reservando: espera no máx 10s e, se o servidor demorar, reserva com o NOME DIGITADO (o site nunca parece quebrado).
   // só entrando (sem reserva): até 2 tentativas de 20s.
   const reservando = !!idAfter;
+  const url = `${PRODUTOS_URL}?acao=identificar&nome=${encodeURIComponent(raw)}&aba=${encodeURIComponent(ABA_CONVIDADOS)}`;
+  if (reservando){
+    // reservando: a busca continua rodando mesmo se demorar. Em 5s sem resposta, reservamos com o nome digitado
+    // e, quando o servidor responder, pedimos pra confirmar a família e passamos a reserva pro nome dela.
+    const busca = fetch(url).then(r=>r.json());
+    const r5 = await Promise.race([ busca.then(d=>({d})).catch(()=>({erro:true})), new Promise(ok=>setTimeout(()=>ok({lento:true}),5000)) ]);
+    clearTimeout(lento);
+    if (r5.lento || r5.erro){
+      reservarComNomeDigitado(raw);
+      if (r5.lento) busca.then(d=>{ const m=(d&&d.matches)||[]; if(m.length) confirmarFamiliaDepois(m); }).catch(()=>{});
+      return;
+    }
+    const m=(r5.d&&r5.d.matches)||[];
+    if(!m.length){ if(err){ err.textContent='Não encontramos seu nome na lista. Confira ou fale com os noivos.'; err.style.display='block'; } }
+    else showFamiliaPicker(m);
+    b.disabled=false; b.textContent='Continuar →';
+    return;
+  }
   const tentar = async ()=>{
-    const ctrl = new AbortController(); const to = setTimeout(()=>ctrl.abort(), reservando ? 10000 : 20000);
-    try{ const res=await fetch(`${PRODUTOS_URL}?acao=identificar&nome=${encodeURIComponent(raw)}&aba=${encodeURIComponent(ABA_CONVIDADOS)}`, { signal: ctrl.signal }); return await res.json(); }
+    const ctrl = new AbortController(); const to = setTimeout(()=>ctrl.abort(), 20000);
+    try{ const res=await fetch(url, { signal: ctrl.signal }); return await res.json(); }
     finally{ clearTimeout(to); }
   };
   try{
     let d;
     try{ d = await tentar(); }
-    catch(e1){
-      if (reservando){ reservarComNomeDigitado(raw); return; }
-      b.textContent='Tentando de novo...'; d = await tentar();
-    }
+    catch(e1){ b.textContent='Tentando de novo...'; d = await tentar(); }
     const matches = (d && d.matches) ? d.matches : [];
     if(!matches.length){ if(err){ err.textContent='Não encontramos seu nome na lista. Confira ou fale com os noivos.'; err.style.display='block'; } }
     else { showFamiliaPicker(matches); }   // SEMPRE confirma a família (2 Vitors, 2 Isas -> ninguém entra na família errada)
@@ -811,6 +840,28 @@ function reservarComNomeDigitado(raw){
   const cb=idAfter; idAfter=null; idSkip=null;
   const b=$('#idBuscar'); if(b){ b.disabled=false; b.textContent='Continuar →'; }
   closeId(); if(cb) setTimeout(cb, 150);
+}
+/* o servidor respondeu DEPOIS da reserva com nome digitado: pede pra confirmar a família
+   (espera o modal de "obrigado" fechar pra não empilhar) */
+let familiaDepois = null;
+function confirmarFamiliaDepois(matches){
+  if (logado()) return;
+  if ($('#giftModalOverlay').classList.contains('open')){ familiaDepois = matches; return; }
+  openId({ title:'Pra guardar no nome da sua família' });
+  showFamiliaPicker(matches);
+}
+/* reservas feitas com o nome digitado (n:Nome) passam para a família (famN) */
+async function migrarNomeLivre(){
+  if (!familia || !nomeLivre || localMode()) return;
+  const velha = 'n:'+nomeLivre, nova = 'fam'+familia.id;
+  const meus = PRODUCTS.filter(p=>reservedList(p).indexOf(velha)>=0);
+  nomeLivre = null; try{ localStorage.removeItem('mr_nomeLivre'); }catch(e){}
+  for (const p of meus){
+    await reserveWrite(p.id, 'cancelar', velha);
+    const r = await reserveWrite(p.id, 'reservar', nova);
+    if (r && r.ok === false) await reserveWrite(p.id, 'reservar', velha);   // (raro) alguém pegou no meio: devolve no nome digitado
+  }
+  if (meus.length){ updateBadges(); renderGrid(); }
 }
 function showFamiliaPicker(matches){
   const esc = s => String(s||'').replace(/'/g,"\\'").replace(/"/g,'&quot;');
@@ -836,6 +887,7 @@ function applyState_(d){
 function applyFamilia(id, nome){
   familia = { id:id, nome:nome || '' };
   save('mr_familia', familia);
+  migrarNomeLivre();   // se reservou com nome digitado (servidor lento), passa pra família
   updateIdentityUI(); updateBadges(); renderGrid();
   if(location.hash.includes('progresso')) renderProgress();
 }

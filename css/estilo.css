@@ -829,3 +829,8 @@ a.modal-btn-yes, a.modal-btn-no{ display:block; text-align:center; text-decorati
 
 /* sacola: link da loja depois de reservado */
 .bag-loja{ display:inline-block; margin-top:6px; font-size:12.5px; font-weight:600; color:var(--pink-deep); text-decoration:underline; text-underline-offset:3px; }
+
+/* link com problema */
+.link-prob{ margin-top:14px; text-align:center; }
+.link-prob-btn{ background:none; border:none; padding:6px; font:inherit; font-size:12.5px; color:var(--ink-3,#777); text-decoration:underline; text-underline-offset:3px; cursor:pointer; }
+.link-prob-ok{ font-size:12.5px; line-height:1.5; color:var(--pink-deep); }
