@@ -159,14 +159,23 @@ async function router(){
   if (raw === _navHash) return;   // já renderizado (evita go()+hashchange fazerem 2x)
   _navHash = raw;
   const h = raw.replace(/^#\/?/, '');
-  if (h.startsWith('produto/')) { showView('produto'); if(!PRODUCTS.length) await loadProducts(); renderProduct(h.split('/')[1]); scrollTopo(); }
+  if (h.startsWith('produto/')) { aquecerScript(); showView('produto'); if(!PRODUCTS.length) await loadProducts(); renderProduct(h.split('/')[1]); scrollTopo(); }
   else if (h === 'presentes') { showView('presentes'); scrollTopo(); await ensureProductsAndRenderGrid(); }
   else if (h === 'progresso') { showView('progresso'); if(!PRODUCTS.length) await loadProducts(); renderProgress(); scrollTopo(); }
   else { showView('home'); scrollTopo(); }
 }
 window.addEventListener('hashchange', router);
 
+/* o Apps Script "dorme" quando ninguém usa e a 1ª chamada demora (cold start).
+   Assim que a pessoa entra em Presentes/produto, acordamos ele em segundo plano —
+   quando ela for reservar e digitar o nome, ele já está rápido. */
+let _aquecido=false;
+function aquecerScript(){
+  if(_aquecido || logado() || !SERVER_ON) return; _aquecido=true;
+  try{ fetch(`${PRODUTOS_URL}?acao=identificar&nome=_&aba=${encodeURIComponent(ABA_CONVIDADOS)}`).catch(()=>{}); }catch(e){}
+}
 async function ensureProductsAndRenderGrid(){
+  aquecerScript();
   const grid = $('#giftGrid');
   // 1) pinta na hora com o cache (ou o que já estiver em memória), sem tela de "carregando"
   if (!PRODUCTS.length){
@@ -269,6 +278,7 @@ function renderProduct(id){
         ${p.loja?`<div class="prod-store-chip"><span class="dot"></span> Sugestão: ${p.loja}</div>`:''}
         ${ mine
           ? `<div class="prod-tip" style="background:var(--pink-pale);border:1px solid var(--pink-soft);"><b>Este é o presente que você escolheu</b><br>Ele está guardado na sua sacola.</div>
+             ${p.link && p.link!=='#' ? `<a class="prod-buy" href="${p.link}" target="_blank" rel="noopener" style="margin-bottom:12px;"><svg viewBox="0 0 24 24" fill="none"><path d="M6 8h12l-1 12H7L6 8z" stroke="#fff" stroke-width="1.6" stroke-linejoin="round"/><path d="M9 8V6a3 3 0 0 1 6 0v2" stroke="#fff" stroke-width="1.6" stroke-linecap="round"/></svg> Abrir link da loja</a>` : ''}
              <button class="prod-cancel" onclick="askCancel('${p.id}')">Cancelar presente</button>`
           : taken
           ? `<div class="prod-tip"><b>Presente esgotado</b> — já foi escolhido pelos convidados.<br>Que tal escolher outro?</div>`
@@ -602,10 +612,11 @@ function renderDrawer(){
     const gifts = myGifts();
     if(!gifts.length){ body.innerHTML=`<div class="drawer-empty"><svg viewBox="0 0 24 24" fill="none"><path d="M6 8h12l-1 12H7L6 8z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M9 8V6a3 3 0 0 1 6 0v2" stroke="currentColor" stroke-width="1.4"/></svg><p>Sua sacola está vazia.<br>Que tal escolher um presente?</p><button class="btn-mini solid" style="margin-top:22px;width:auto;" onclick="closeDrawer();go('presentes')">Ver presentes</button></div>`; return; }
     body.innerHTML=`<div class="bag-selected">
-      ${gifts.map(p=>`<div class="bag-card">
+      ${gifts.map(p=>`<div class="bag-card" onclick="closeDrawer();openProduct('${p.id}')" style="cursor:pointer;">
         <div class="wl-thumb">${mediaHTML(p)}</div>
-        <div class="wl-info"><span class="bag-tag">Presente reservado</span><p class="wl-name">${p.nome}</p><p class="wl-price">${money(p.preco)} · ${p.loja}</p></div>
-        <button class="wl-remove" title="Cancelar presente" onclick="askCancel('${p.id}')">✕</button>
+        <div class="wl-info"><span class="bag-tag">Presente reservado</span><p class="wl-name">${p.nome}</p><p class="wl-price">${money(p.preco)} · ${p.loja}</p>
+          ${p.link && p.link!=='#' ? `<a class="bag-loja" href="${p.link}" target="_blank" rel="noopener" onclick="event.stopPropagation()">Abrir link da loja ↗</a>` : ''}</div>
+        <button class="wl-remove" title="Cancelar presente" onclick="event.stopPropagation();askCancel('${p.id}')">✕</button>
       </div>`).join('')}
       <button class="btn-mini ghost" style="margin-top:16px;" onclick="closeDrawer();go('presentes')"><svg viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg> Adicionar mais presentes</button>
       <p class="modal-nota" style="text-align:center;">Você pode reservar quantos quiser. Cancelar devolve o item à lista.</p>
@@ -763,16 +774,21 @@ async function idBuscar(){
   const err=$('#idErro'), b=$('#idBuscar');
   if(!raw) return;
   if(err) err.style.display='none';
-  b.disabled=true; b.textContent='Entrando...';
-  const ctrl = new AbortController(); const to = setTimeout(()=>ctrl.abort(), 15000);  // não trava: aborta em 15s (Apps Script no cold start é lento)
+  b.disabled=true; b.textContent='Buscando...';
+  const lento = setTimeout(()=>{ b.textContent='Quase lá...'; }, 6000);
+  // até 2 tentativas de 20s (a 1ª chamada do Apps Script pode ser lenta)
+  const tentar = async ()=>{
+    const ctrl = new AbortController(); const to = setTimeout(()=>ctrl.abort(), 20000);
+    try{ const res=await fetch(`${PRODUTOS_URL}?acao=identificar&nome=${encodeURIComponent(raw)}&aba=${encodeURIComponent(ABA_CONVIDADOS)}`, { signal: ctrl.signal }); return await res.json(); }
+    finally{ clearTimeout(to); }
+  };
   try{
-    const res=await fetch(`${PRODUTOS_URL}?acao=identificar&nome=${encodeURIComponent(raw)}&aba=${encodeURIComponent(ABA_CONVIDADOS)}`, { signal: ctrl.signal });
-    const d=await res.json();
+    let d; try{ d = await tentar(); }catch(e1){ b.textContent='Tentando de novo...'; d = await tentar(); }
     const matches = (d && d.matches) ? d.matches : [];
     if(!matches.length){ if(err){ err.textContent='Não encontramos seu nome na lista. Confira ou fale com os noivos.'; err.style.display='block'; } }
     else { showFamiliaPicker(matches); }   // SEMPRE confirma a família (2 Vitors, 2 Isas -> ninguém entra na família errada)
-  }catch(e){ if(err){ err.textContent = (e && e.name==='AbortError') ? 'Está demorando demais. Verifique se o script foi republicado e tente de novo.' : 'Erro de conexão. Tente de novo em instantes.'; err.style.display='block'; } }
-  finally { clearTimeout(to); }
+  }catch(e){ if(err){ err.textContent='A conexão está lenta agora. Toque em Continuar para tentar de novo — ou use "Reservar sem entrar".'; err.style.display='block'; } }
+  finally { clearTimeout(lento); }
   b.disabled=false; b.textContent='Continuar →';
 }
 function showFamiliaPicker(matches){
